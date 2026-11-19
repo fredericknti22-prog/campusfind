@@ -1651,3 +1651,65 @@ test("registration: date of birth uses menus; today's date is a typo (not a 24-h
   await sess.ref.update({ age_block_until: Date.now() + 86_400_000 });
   assert.equal((await old.get('/register')).status, 200, 'old blocks are ignored');
 });
+
+test('pay first: Pricing goes straight to payment; the listing is chosen after; Business posts wait for payment; Pro perks follow', async () => {
+  const payments = require('../src/services/payments');
+  const pro = require('../src/services/pro');
+  const c = await signup('Pay First', 'pay.first@campus.test');
+  const me = await users.getByEmail('pay.first@campus.test');
+  const lid = idOf(await publish(c, { title: 'Pay first lamp' }));
+
+  // Pricing: one tap = an order with no listing yet
+  const pricing = await c.get('/pricing');
+  assert.match(pricing.text, /action="\/pricing\/featured\/buy"/);
+  assert.match(pricing.text, /Every paid plan makes you a Pro seller/);
+  const buy = await c.request('POST', '/pricing/featured/buy', { form: { _csrf: await c.token('/pricing') } });
+  const orderId = Number(/\/orders\/(\d+)/.exec(buy.headers.get('location'))[1]);
+  const order = await require('../src/repo/orders').get(orderId);
+  assert.equal(order.listing_id, null, 'nothing is chosen or applied before payment');
+  assert.equal(order.status, 'awaiting_payment');
+  assert.equal((await listingsRepo.get(lid)).is_featured, 0);
+  assert.equal(pro.isPro(await users.getById(me.user_id)), false);
+
+  await payments.fulfil(orderId);
+  const after = await users.getById(me.user_id);
+  assert.ok(pro.isPro(after), 'payment makes the member a Pro seller');
+  const orderPage = await c.get(`/orders/${orderId}`);
+  assert.match(orderPage.text, /Choose the listing to promote/);
+  assert.match(orderPage.text, new RegExp(`name="listing_id" value="${lid}"`));
+  const apply = await c.request('POST', `/orders/${orderId}/apply`, { form: { _csrf: await c.token(`/orders/${orderId}`), listing_id: String(lid) } });
+  assert.equal(apply.status, 302);
+  assert.equal((await listingsRepo.get(lid)).is_featured, 1, 'the promotion starts once the listing is chosen');
+  const again = await c.request('POST', `/orders/${orderId}/apply`, { form: { _csrf: await c.token(`/orders/${orderId}`), listing_id: String(lid) } });
+  assert.match(again.headers.get('location'), new RegExp(`/orders/${orderId}`), 'a payment is used once');
+
+  // Business: saved as a draft, sent to payment, live after payment
+  const bizCat = (await require('../src/repo/categories').all()).find((x) => x.slug === 'business');
+  const other = await signup('Biz Owner', 'biz.owner.pay@campus.test');
+  const form = await other.get('/listings/new?category=business');
+  assert.match(form.text, /Business listings need payment before they go live/);
+  const r = await other.request('POST', '/listings/new', { multipart: listingForm(await other.token('/listings/new'), { title: 'Paid hostel rooms', category_id: String(bizCat.category_id) }) });
+  assert.match(r.headers.get('location'), /\/promote$/, 'sent to payment');
+  const bid = idOf(r.headers.get('location'));
+  assert.equal((await listingsRepo.get(bid)).status, 'draft');
+  listingsRepo.invalidate();
+  assert.doesNotMatch((await new Client().get('/business')).text, /Paid hostel rooms/, 'not listed before payment');
+  const promote = await other.get(`/listings/${bid}/promote`);
+  assert.match(promote.text, /Pay to publish your business/);
+  assert.doesNotMatch(promote.text, /value="featured"/, 'business drafts pay for a Business plan');
+  const p = await other.request('POST', `/listings/${bid}/promote`, { form: { _csrf: await other.token(`/listings/${bid}/promote`), product: 'business' } });
+  await payments.fulfil(Number(/\/orders\/(\d+)/.exec(p.headers.get('location'))[1]));
+  const live = await listingsRepo.get(bid);
+  assert.equal(live.status, 'active', 'live once paid');
+  listingsRepo.invalidate();
+  assert.match((await new Client().get('/business')).text, /Paid hostel rooms/);
+
+  // Perks: badge, photo limit, stats
+  const owner = await users.getByEmail('biz.owner.pay@campus.test');
+  assert.equal(pro.photoLimit(owner), 10);
+  assert.equal(pro.photoLimit({ pro_until: 0 }), 4);
+  assert.match((await new Client().get(`/users/${owner.user_id}`)).text, /Pro seller/);
+  assert.match((await other.get('/my/listings')).text, /class="small manage__stats"/, 'Pro sellers see stats');
+  const free = await signup('Free Seller', 'free.seller.pay@campus.test');
+  assert.match((await free.get('/my/listings')).text, /Pro sellers see views, saves and chats/);
+});
