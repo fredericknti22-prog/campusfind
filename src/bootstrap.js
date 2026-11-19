@@ -12,14 +12,19 @@ async function init() {
   await categories.seedDefaults();
   await categories.ensureDefaults();
   await settings.refresh(true);
-  await bootstrapSuperAdmin();
-  await promoteConfiguredOwner();
+  try {
+    await bootstrapSuperAdmin();
+    await promoteConfiguredOwner();
+    await require('./services/twofactor').breakGlass();
+  } catch (err) {
+    // Render (and other non-GCP hosts) need FIREBASE_SERVICE_ACCOUNT; still bring the HTTP server up.
+    console.warn(`[bootstrap] Firebase Auth setup deferred: ${err.message}`);
+  }
   await cleanupSessions();
   await cleanupRateLimits();
   await require('./repo/messages').cleanupOld();
   await require('./services/assistant').cleanupChats();
   await liftExpiredSuspensions();
-  await require('./services/twofactor').breakGlass();
   await require('./services/whatsNew').seedFirst();
 }
 
