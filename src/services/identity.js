@@ -41,6 +41,25 @@ async function signInWithPassword(email, password) {
   return { uid: r.localId };
 }
 
+/**
+ * Create an email/password user via the public Identity Toolkit API (no Admin SDK).
+ * Used on hosts like Render until FIREBASE_SERVICE_ACCOUNT is set.
+ * Resolves { uid }.
+ */
+async function signUp(email, password, displayName) {
+  const body = { email, password, returnSecureToken: false };
+  if (displayName) body.displayName = displayName;
+  try {
+    const r = await call('accounts:signUp', body);
+    return { uid: r.localId };
+  } catch (err) {
+    if (err.code === 'EMAIL_EXISTS') throw new IdentityError('EMAIL_EXISTS');
+    if (err.code === 'WEAK_PASSWORD' || err.code === 'PASSWORD_DOES_NOT_MEET_REQUIREMENTS') throw new IdentityError('WEAK_PASSWORD');
+    if (err.code === 'INVALID_EMAIL') throw new IdentityError('INVALID_EMAIL');
+    throw err;
+  }
+}
+
 /** Firebase emails the member a reset link (action URL is set in the console to <BASE_URL>/reset). */
 const sendPasswordReset = (email) => call('accounts:sendOobCode', { requestType: 'PASSWORD_RESET', email });
 
@@ -67,4 +86,4 @@ async function applyVerifyCode(oobCode) {
   return { email: String(r.email || '').toLowerCase() };
 }
 
-module.exports = { IdentityError, signInWithPassword, sendPasswordReset, verifyResetCode, confirmPasswordReset, signInWithCustomToken, sendVerifyEmail, applyVerifyCode };
+module.exports = { IdentityError, signInWithPassword, signUp, sendPasswordReset, verifyResetCode, confirmPasswordReset, signInWithCustomToken, sendVerifyEmail, applyVerifyCode };

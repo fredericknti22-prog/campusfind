@@ -14,15 +14,14 @@
       "**/node_modules/**"
     ],
     "cleanUrls": false,
-    "rewrites": [
+    "redirects": [
       {
         "source": "**",
-        "function": {
-          "functionId": "app",
-          "region": "us-central1"
-        }
+        "destination": "https://campusfind-6h5q.onrender.com/:splat",
+        "type": 302
       }
     ],
+    "rewrites": [],
     "headers": [
       {
         "source": "/fonts/**",

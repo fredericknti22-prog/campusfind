@@ -25,21 +25,24 @@ const options = { projectId: fb.projectId };
 if (fb.storageBucket) options.storageBucket = fb.storageBucket;
 const onGcp = Boolean(process.env.K_SERVICE || process.env.FUNCTION_TARGET);
 const hasExplicitCreds = Boolean(fb.serviceAccount || process.env.GOOGLE_APPLICATION_CREDENTIALS);
-if (fb.emulator) {
+const adminReady = Boolean(fb.emulator || fb.serviceAccount || hasExplicitCreds || onGcp);
+if (fb.emulator || !adminReady) {
+  // Skip metadata-server probes on emulators and non-GCP hosts (Render).
   process.env.METADATA_SERVER_DETECTION = process.env.METADATA_SERVER_DETECTION || 'none';
+}
+if (fb.emulator) {
+  // Auth/Storage emulators do not need credentials.
 } else if (fb.serviceAccount) {
   options.credential = cert(fb.serviceAccount);
 } else if (hasExplicitCreds || onGcp) {
   options.credential = applicationDefault();
 } else if (config.isProd) {
-  // Non-GCP hosts (e.g. Render) have no metadata server — avoid ADC until FIREBASE_SERVICE_ACCOUNT is set.
-  console.warn('[firebase] FIREBASE_SERVICE_ACCOUNT is not set. Auth Admin and Storage Admin calls will fail until it is configured on this host.');
+  console.warn('[firebase] FIREBASE_SERVICE_ACCOUNT is not set. Using Identity Toolkit REST for sign-up/sign-in; Admin APIs stay off until a service account is configured.');
 } else {
   options.credential = applicationDefault();
 }
 
 const app = getApps().length ? getApp() : initializeApp(options);
-const adminReady = Boolean(fb.emulator || fb.serviceAccount || hasExplicitCreds || onGcp);
 
 module.exports = {
   app,

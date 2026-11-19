@@ -15,10 +15,16 @@ async function init() {
   try {
     await bootstrapSuperAdmin();
     await promoteConfiguredOwner();
-    await require('./services/twofactor').breakGlass();
   } catch (err) {
-    // Render (and other non-GCP hosts) need FIREBASE_SERVICE_ACCOUNT; still bring the HTTP server up.
-    console.warn(`[bootstrap] Firebase Auth setup deferred: ${err.message}`);
+    console.warn(`[bootstrap] Super-admin bootstrap deferred: ${err.message}`);
+  }
+  const { adminReady } = require('./firebase');
+  if (adminReady) {
+    try {
+      await require('./services/twofactor').breakGlass();
+    } catch (err) {
+      console.warn(`[bootstrap] 2FA break-glass deferred: ${err.message}`);
+    }
   }
   await cleanupSessions();
   await cleanupRateLimits();
