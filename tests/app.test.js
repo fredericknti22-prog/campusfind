@@ -705,9 +705,9 @@ test('home: hero, header search and categories, listing cards, call-to-action bu
   assert.match(visitor.text, /Buy, sell and find on campus/);
   assert.match(visitor.text, /action="\/browse"[^>]*role="search"/);
   assert.match(visitor.text, /Browse listings/);
-  assert.match(visitor.text, /Create an account/);
-  assert.match(visitor.text, /Report a lost item/);
-  assert.match(visitor.text, /Report a found item/);
+  assert.match(visitor.text, /Join free/);
+  assert.match(visitor.text, /Report it and add a photo/);
+  assert.match(visitor.text, /Post a photo and where you left it/);
   assert.match(visitor.text, /href="\/listings\/new\?category=lost-found&amp;kind=lost"/);
   assert.doesNotMatch(visitor.text, /My account/, 'visitors see sign in / join, not the account menu');
 
@@ -717,7 +717,7 @@ test('home: hero, header search and categories, listing cards, call-to-action bu
   assert.match(memberHome.text, /Welcome back,/);
   assert.match(memberHome.text, /My account/);
   assert.match(memberHome.text, /Welcome back, /, 'signed-in members are greeted by name');
-  assert.doesNotMatch(memberHome.text, /Create an account/, 'the sign-up button is for visitors only');
+  assert.doesNotMatch(memberHome.text, /Join free/, 'the sign-up button is for visitors only');
   assert.match(memberHome.text, /class="btn btn--accent btn--sm cf-post" href="\/listings\/new"/, 'the Post button is always in the header');
 });
 
