@@ -238,9 +238,7 @@ function page(req, { title, body, active = '', description = '', bare = false, w
   <meta name="apple-mobile-web-app-title" content="CampusFind">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   ${isCandidate(req) ? raw('<meta name="robots" content="noindex, nofollow">') : ''}
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Hanken+Grotesk:wght@400;500;600;700&display=swap">
+  <link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="${asset('/css/app.css')}">
   <script src="${asset('/js/theme.js')}"></script>
 </head>

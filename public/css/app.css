@@ -2468,8 +2468,8 @@ main { padding-top: 22px; }
   --shadow-1: 0 1px 2px rgba(33, 33, 33, .04);
   --shadow-2: 0 12px 28px rgba(21, 101, 192, .12);
   --focus: #fdb913;
-  --font: "Hanken Grotesk", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Cormorant Garamond", "Times New Roman", serif;
+  --font: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; /* self-hosted: no third-party font requests */
+  --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, "Times New Roman", serif; /* system serifs: same feel, nothing downloaded from other sites */
   --hdr-h: 72px;
 }
 [data-theme="dark"] {
@@ -2532,7 +2532,7 @@ h2, .section__head h2 { font-size: clamp(1.45rem, 2.4vw, 1.85rem); }
 }
 .btn--ghost-on-dark:hover { background: rgba(255,255,255,.12); color: #fff; }
 
-/* Header — clean white bar, soft search, round icon actions */
+/* Header ï¿½ clean white bar, soft search, round icon actions */
 .cf-header { background: var(--header-bg); border-bottom: 1px solid var(--line); box-shadow: none; }
 .cf-header::before { display: none; }
 .cf-header__bar { min-height: 72px; gap: 16px; }
@@ -2567,7 +2567,7 @@ h2, .section__head h2 { font-size: clamp(1.45rem, 2.4vw, 1.85rem); }
 }
 .tn-link { color: var(--ink-2); font-weight: 500; }
 
-/* Promo hero — Rosie depot-band energy */
+/* Promo hero ï¿½ Rosie depot-band energy */
 .cf-hero--promo {
   display: grid; grid-template-columns: 1.15fr .85fr; gap: 0; align-items: stretch;
   margin: 18px 0 8px; padding: 0; overflow: hidden;
@@ -2643,7 +2643,7 @@ h2, .section__head h2 { font-size: clamp(1.45rem, 2.4vw, 1.85rem); }
 .spot--soft .spot--business,
 .spot--soft .spot--lf { background: var(--card); color: var(--ink); }
 
-/* Category rail — Rosie icon tiles */
+/* Category rail ï¿½ Rosie icon tiles */
 .cats--rail {
   display: grid;
   grid-auto-flow: column;
@@ -2696,3 +2696,11 @@ h2, .section__head h2 { font-size: clamp(1.45rem, 2.4vw, 1.85rem); }
   .cats--rail { grid-auto-columns: 88px; }
   .cat--tile .cat__icon { width: 64px; height: 64px; }
 }
+
+/* ===== Home: lost & found shortcuts (restyle) ===== */
+.lf-quick { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin: 4px 0 8px; }
+.lf-quick__link { display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); color: var(--ink); text-decoration: none; font-size: .88rem; }
+.lf-quick__link:hover { border-color: var(--brand); color: var(--brand); }
+.lf-quick__link .icon { width: 16px; height: 16px; color: var(--brand); flex: none; }
+.lf-quick__stat { margin: 0; display: inline-flex; align-items: center; gap: 6px; font-size: .85rem; color: var(--ink-2); }
+.lf-quick__stat .icon { width: 15px; height: 15px; color: #10a362; }

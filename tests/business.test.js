@@ -57,7 +57,15 @@ async function member(name, tag) {
 async function post(c, categoryId, title, extra = {}) {
   const r = await c.post('/listings/new', { title, category_id: String(categoryId), price_type: 'none', description: 'Details are in the description, please message me.', contact: 'Ask me', intent: 'publish', ...extra }, '/listings/new');
   assert.equal(r.status, 302, r.text.slice(0, 200));
-  return Number(/\/listings\/(\d+)/.exec(r.headers.get('location'))[1]);
+  const id = Number(/\/listings\/(\d+)/.exec(r.headers.get('location'))[1]);
+  if (/\/promote$/.test(r.headers.get('location'))) await payForBusiness(c, id); // Business listings go live once paid
+  return id;
+}
+
+async function payForBusiness(c, id) {
+  const p = await c.post(`/listings/${id}/promote`, { product: 'business' }, `/listings/${id}/promote`);
+  const orderId = Number(/\/orders\/(\d+)/.exec(p.headers.get('location'))[1]);
+  await require('../src/services/payments').fulfil(orderId);
 }
 
 test.before(async () => {

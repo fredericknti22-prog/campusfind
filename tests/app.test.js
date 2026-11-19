@@ -92,7 +92,7 @@ test('health, pages and security headers', async () => {
   assert.equal((await c.get('/healthz')).status, 200);
   const home = await c.get('/');
   assert.equal(home.status, 200);
-  assert.match(home.text, /Looking for something\?/);
+  assert.match(home.text, /Buy, sell and find on campus/);
   assert.match(home.headers.get('content-security-policy'), /script-src 'self'/);
   assert.doesNotMatch(home.text, /<script>[^<]/, 'no inline scripts allowed by CSP');
   assert.equal(home.headers.get('x-content-type-options'), 'nosniff');
@@ -698,11 +698,11 @@ test('offline page is self-contained and CSP-clean', async () => {
 
 test('home: hero, header search and categories, listing cards, call-to-action buttons and lost & found shortcuts', async () => {
   const visitor = await new Client().get('/');
-  assert.match(visitor.text, /class="cf-hero"/, 'a hero with the welcome message');
+  assert.match(visitor.text, /class="cf-hero[ "]/, 'a hero with the welcome message');
   assert.match(visitor.text, /<nav class="sp-group sp-cats" aria-label="Categories">/, 'categories in the side panel');
   assert.match(visitor.text, /class="grid"/, 'listings are shown as a card grid');
   assert.match(visitor.text, /class="listing tone-/, 'each listing is a card');
-  assert.match(visitor.text, /Looking for something\?/);
+  assert.match(visitor.text, /Buy, sell and find on campus/);
   assert.match(visitor.text, /action="\/browse"[^>]*role="search"/);
   assert.match(visitor.text, /Browse listings/);
   assert.match(visitor.text, /Create an account/);
@@ -957,6 +957,8 @@ test('freshness: listings get a reminder, expire after 30 days, renew in one tap
 
   const bizCat = (await require('../src/repo/categories').all()).find((x) => x.slug === 'business');
   const bizId = idOf(await publish(c, { title: 'Hostel freshness exempt', category_id: String(bizCat.category_id) }));
+  const paid = await c.request('POST', `/listings/${bizId}/promote`, { form: { _csrf: await c.token(`/listings/${bizId}/promote`), product: 'business' } });
+  await require('../src/services/payments').fulfil(Number(/\/orders\/(\d+)/.exec(paid.headers.get('location'))[1]));
   await listingsRepo.update(bizId, { published_at: Date.now() - 90 * DAY });
   await fresh.sweep({ force: true });
   assert.equal((await listingsRepo.get(bizId)).status, 'active', 'business listings never expire');

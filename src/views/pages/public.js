@@ -79,6 +79,12 @@ function home(req, d) {
         </a>
       </section>
 
+      <section class="lf-quick" aria-label="Lost and found shortcuts">
+        <a class="lf-quick__link" href="/listings/new?category=lost-found&amp;kind=lost">${icon('search')}<span><strong>Lost something?</strong> Report it and add a photo</span></a>
+        <a class="lf-quick__link" href="/listings/new?category=lost-found&amp;kind=found">${icon('compass')}<span><strong>Found something?</strong> Post a photo and where you left it</span></a>
+        ${d.reunited ? html`<p class="lf-quick__stat">${icon('check')} <span><strong>${d.reunited}</strong> ${d.reunited === 1 ? 'item has' : 'items have'} been returned to their owners through CampusFind.</span></p>` : ''}
+      </section>
+
       <section class="section" aria-labelledby="h-cats">
         <div class="section__head"><h2 id="h-cats">Shop by category</h2><a class="link-arrow" href="/browse">See all</a></div>
         <ul class="cats cats--rail">
