@@ -116,19 +116,20 @@ function header(req, active = '') {
       <form class="cf-search" action="/browse" method="get" role="search">
         <label class="sr-only" for="hdr-q">Search listings</label>
         ${icon('search')}
-        <input id="hdr-q" type="search" name="q" placeholder="Search listings" maxlength="80" autocomplete="off">
-        <button class="cf-search__go" type="submit">Search</button>
+        <input id="hdr-q" type="search" name="q" placeholder="Search textbooks, rooms, tutors…" maxlength="80" autocomplete="off">
+        <button class="cf-search__go" type="submit" aria-label="Search">${icon('search')}</button>
       </form>
 
       <div class="cf-actions">
-        <button class="icon-btn" type="button" data-theme-toggle aria-label="Switch colour theme">${icon('moon', 'theme-moon')}${icon('sun', 'theme-sun')}</button>
+        <button class="icon-btn icon-btn--soft" type="button" data-theme-toggle aria-label="Switch colour theme">${icon('moon', 'theme-moon')}${icon('sun', 'theme-sun')}</button>
         ${u
           ? html`
-            <a class="icon-btn cf-hide-sm" href="/messages" aria-label="Chats">${icon('mail')}</a>
-            <a class="icon-btn" href="/notifications" aria-label="Notifications${unread ? `, ${unread} unread` : ''}">${icon('bell')}${unread ? dot(unread) : ''}</a>
+            <a class="icon-btn icon-btn--soft cf-hide-sm" href="/saved" aria-label="Saved listings">${icon('bookmark')}</a>
+            <a class="icon-btn icon-btn--soft cf-hide-sm" href="/messages" aria-label="Chats">${icon('mail')}</a>
+            <a class="icon-btn icon-btn--soft" href="/notifications" aria-label="Notifications${unread ? `, ${unread} unread` : ''}">${icon('bell')}${unread ? dot(unread) : ''}</a>
             <a class="btn btn--accent btn--sm cf-post" href="/listings/new">${icon('plus')}<span>Post</span></a>
             <details class="menu">
-              <summary class="account-pill" aria-label="Account menu">${avatar(u.name, { size: 'sm' })}<span class="sr-only">My account</span></summary>
+              <summary class="account-pill icon-btn--soft" aria-label="Account menu">${avatar(u.name, { size: 'sm' })}<span class="sr-only">My account</span></summary>
               <div class="menu__panel">
                 <p class="menu__who"><strong>${u.name}</strong><span>${u.email}</span></p>
                 <a href="/users/${u.user_id}">${icon('user')} My profile</a>
@@ -147,9 +148,9 @@ function header(req, active = '') {
               </div>
             </details>`
           : html`
-            <a class="btn btn--accent btn--sm cf-post" href="/listings/new">${icon('plus')}<span>Post</span></a>
-            <a class="btn btn--ghost btn--sm" href="/login">Sign in</a>
-            <a class="btn btn--primary btn--sm cf-hide-sm" href="/register">Join</a>`}
+            <a class="icon-btn icon-btn--soft" href="/saved" aria-label="Saved listings">${icon('bookmark')}</a>
+            <a class="btn btn--ghost btn--sm" href="/login">Log in</a>
+            <a class="btn btn--accent btn--sm cf-post" href="/listings/new">${icon('plus')}<span>Post</span></a>`}
       </div>
     </div>
   </header>`;
@@ -228,7 +229,7 @@ function page(req, { title, body, active = '', description = '', bare = false, w
   ${canonical ? html`<meta property="og:url" content="${abs(canonical)}"><link rel="canonical" href="${abs(canonical)}">` : ''}
   <meta name="twitter:card" content="${image ? 'summary_large_image' : 'summary'}">
   ${jsonLd ? raw(`<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, '\\u003c')}</script>`) : ''}
-  <meta name="theme-color" content="#2563EB">
+  <meta name="theme-color" content="#1565c0">
   <link rel="icon" href="/img/favicon.png" type="image/png">
   <link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
   <link rel="manifest" href="/manifest.webmanifest">
@@ -237,7 +238,9 @@ function page(req, { title, body, active = '', description = '', bare = false, w
   <meta name="apple-mobile-web-app-title" content="CampusFind">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   ${isCandidate(req) ? raw('<meta name="robots" content="noindex, nofollow">') : ''}
-  <link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Hanken+Grotesk:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="${asset('/css/app.css')}">
   <script src="${asset('/js/theme.js')}"></script>
 </head>

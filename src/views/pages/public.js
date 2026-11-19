@@ -41,81 +41,61 @@ function home(req, d) {
     canonical: '/',
     jsonLd: require('../seo').siteLd(),
     body: html`
-      <section class="cf-hero" aria-labelledby="h-hero">
+      <section class="cf-hero cf-hero--promo" aria-labelledby="h-hero">
         ${heroPaths()}
         <div class="cf-hero__text">
-          <p class="eyebrow">${icon('shield')} Moderated campus marketplace</p>
-          <h1 id="h-hero">${u ? html`Welcome back, ${first}.` : html`Looking for something? Got something to share?`}</h1>
+          <p class="eyebrow">Campus deals</p>
+          <h1 id="h-hero">${u ? html`Welcome back, ${first}.` : html`Buy, sell and find on campus`}</h1>
           <p class="cf-hero__lead">${u
-            ? 'Browse what is new on campus, answer your messages, or post something of your own.'
-            : html`Textbooks, rooms, tutors, jobs, events and lost property from ${campus}, all in one place.`}</p>
-          <p class="cf-hero__rotate">Find a <span class="rotator" data-rotate="room near campus|second-hand textbook|tutor for your exams|hostel bed for next semester|lost student ID"><span class="rotator__word">room near campus</span></span></p>
-          <form class="cf-hero__search" action="/browse" method="get" role="search">
-            <label class="sr-only" for="hero-q">Search all listings</label>
-            ${icon('search')}
-            <input id="hero-q" type="search" name="q" placeholder="Search CampusFind" maxlength="80" autocomplete="off">
-            <button class="btn btn--accent" type="submit">Search</button>
-          </form>
-          <div class="row row--wrap">
-            <a class="btn btn--light" href="/browse">Browse all ${icon('arrow')}</a>
-            <a class="btn btn--glass" href="${u ? '/listings/new' : '/register'}">${u ? 'Post a listing' : 'Create an account'}</a>
+            ? 'Browse what is new, answer your messages, or post something of your own.'
+            : html`Textbooks, rooms, tutors, jobs, events and lost property from ${campus}.`}</p>
+          <div class="row row--wrap cf-hero__ctas">
+            <a class="btn btn--accent" href="/browse">Shop now</a>
+            <a class="btn btn--ghost-on-dark" href="${u ? '/listings/new' : '/register'}">${u ? 'Post a listing' : 'Join free'}</a>
           </div>
-          <ul class="cf-hero__trust">
-            <li>${icon('shield')} Every report reviewed by staff</li>
-            <li>${icon('lock')} Your email and phone stay private</li>
-            <li>${icon('check')} <span data-count="${d.total}">${d.total}</span>live ${d.total === 1 ? 'listing' : 'listings'}</li>
-          </ul>
         </div>
-        <section class="lf cf-lf" aria-labelledby="h-lf">
-          <h2 id="h-lf" class="sr-only">Lost and found</h2>
-          <a class="lf__card lf__card--lost" href="/listings/new?category=lost-found&amp;kind=lost">
-            <span class="lf__icon">${icon('search')}</span>
-            <span class="lf__text"><strong>Lost something?</strong><small>Tell the campus what you lost and where, and add a photo. Someone may already have it.</small></span>
-            <span class="lf__go">Report a lost item ${icon('arrow')}</span>
-          </a>
-          <a class="lf__card lf__card--found" href="/listings/new?category=lost-found&amp;kind=found">
-            <span class="lf__icon">${icon('compass')}</span>
-            <span class="lf__text"><strong>Found something?</strong><small>Help it find its way home. Post a photo, what you found and where you left it.</small></span>
-            <span class="lf__go">Report a found item ${icon('arrow')}</span>
-          </a>
-          ${d.reunited ? html`<p class="lf__stat">${icon('check')} <span><strong>${d.reunited}</strong> ${d.reunited === 1 ? 'item has' : 'items have'} been returned to their owners through CampusFind.</span></p>` : ''}
-        </section>
+        <div class="cf-hero__aside" aria-hidden="true">
+          <div class="cf-hero__panel">
+            <p class="cf-hero__panel-kicker">Find a</p>
+            <p class="cf-hero__rotate"><span class="rotator" data-rotate="room near campus|second-hand textbook|tutor for your exams|hostel bed for next semester|lost student ID"><span class="rotator__word">room near campus</span></span></p>
+            <p class="cf-hero__panel-meta">${icon('check')} <span data-count="${d.total}">${d.total}</span> live ${d.total === 1 ? 'listing' : 'listings'}</p>
+          </div>
+        </div>
       </section>
 
-      <section class="spot" aria-labelledby="h-spot">
+      <section class="spot spot--soft" aria-labelledby="h-spot">
         <h2 id="h-spot" class="sr-only">Business directory and lost and found</h2>
-        <a class="spot__card spot--business tone-8" href="/business">
+        <a class="spot__card spot--business" href="/business">
           <span class="spot__icon">${icon('store')}</span>
           <span class="spot__text"><strong>Business directory</strong>
-            <small>Hostels, food vendors, shops and services selling to students.${nBiz ? ` ${nBiz} listed right now.` : ''}</small></span>
-          <span class="spot__go">Explore businesses ${icon('arrow')}</span>
+            <small>Hostels, food vendors, shops and services.${nBiz ? ` ${nBiz} listed.` : ''}</small></span>
+          <span class="spot__go">Explore ${icon('arrow')}</span>
         </a>
-        <a class="spot__card spot--lf tone-6" href="/lost-found">
+        <a class="spot__card spot--lf" href="/lost-found">
           <span class="spot__icon">${icon('compass')}</span>
-          <span class="spot__text"><strong>Lost &amp; found board</strong>
-            <small>${nLost ? `${nLost} ${nLost === 1 ? 'item is' : 'items are'} waiting to be claimed.` : 'Lost it or found it? Start here.'}${d.reunited ? ` ${d.reunited} already returned.` : ''}</small></span>
-          <span class="spot__go">Open the board ${icon('arrow')}</span>
+          <span class="spot__text"><strong>Lost &amp; found</strong>
+            <small>${nLost ? `${nLost} waiting to be claimed.` : 'Lost it or found it? Start here.'}${d.reunited ? ` ${d.reunited} returned.` : ''}</small></span>
+          <span class="spot__go">Open board ${icon('arrow')}</span>
         </a>
       </section>
 
       <section class="section" aria-labelledby="h-cats">
-        <div class="section__head"><h2 id="h-cats">Browse by category</h2><a class="link-arrow" href="/browse">All listings ${icon('arrow')}</a></div>
-        <ul class="cats">
+        <div class="section__head"><h2 id="h-cats">Shop by category</h2><a class="link-arrow" href="/browse">See all</a></div>
+        <ul class="cats cats--rail">
           ${(d.categories || []).map((c) => {
             const href = c.slug === 'business' ? '/business' : c.slug === 'lost-found' ? '/lost-found' : `/browse?category=${c.slug}`;
-            const n = (d.counts && d.counts[c.slug]) || 0;
-            return html`<li><a class="cat tone-${c.tone ?? 0}" href="${href}"><span class="cat__icon">${icon(c.icon || 'tag')}</span>
-              <span class="cat__text"><span class="cat__name">${c.name}</span><span class="cat__count">${n} ${n === 1 ? 'listing' : 'listings'}</span></span></a></li>`;
+            return html`<li><a class="cat cat--tile" href="${href}"><span class="cat__icon">${icon(c.icon || 'tag')}</span>
+              <span class="cat__name">${c.name}</span></a></li>`;
           })}
         </ul>
       </section>
 
-      ${section('h-feat', 'Featured listings', d.featured, ['/pricing', 'Promote yours'])}
-      ${section('h-biz', 'Local businesses', d.business, ['/business', 'Business directory'])}
-      ${section('h-lost', 'Lost and found', d.lostFound, ['/lost-found', 'Open the board'])}
+      ${section('h-feat', 'Featured listings', d.featured, ['/pricing', 'See all'])}
+      ${section('h-biz', 'Local businesses', d.business, ['/business', 'See all'])}
+      ${section('h-lost', 'Lost and found', d.lostFound, ['/lost-found', 'See all'])}
 
       <section class="section" aria-labelledby="h-new">
-        <div class="section__head"><h2 id="h-new">Latest listings</h2><a class="link-arrow" href="/browse?sort=newest">View all ${icon('arrow')}</a></div>
+        <div class="section__head"><h2 id="h-new">Latest listings</h2><a class="link-arrow" href="/browse?sort=newest">See all</a></div>
         ${d.latest.length
           ? grid(d.latest)
           : html`<div class="empty">${icon('inbox', 'icon--xl')}<h2>No listings published</h2><p>Listings will appear here once members publish them.</p><a class="btn btn--primary" href="${u ? '/listings/new' : '/register'}">Publish a listing</a></div>`}

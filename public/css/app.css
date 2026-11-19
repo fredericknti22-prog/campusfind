@@ -2430,3 +2430,269 @@ main { padding-top: 22px; }
 .pro-perks h2 { display: flex; align-items: center; gap: 8px; }
 .pay-notice { margin: 0; }
 .apply-card { margin-top: 12px; }
+
+/* ==========================================================================
+   Rosie-inspired marketplace theme (final layer).
+   White surfaces, blue primary, gold action, serif display + grotesk UI.
+   ========================================================================== */
+:root {
+  --paper: #ffffff;
+  --paper-2: #f2f4f7;
+  --card: #ffffff;
+  --ink: #212121;
+  --ink-2: #5b6472;
+  --ink-3: #6b7385;
+  --line: #eef1f5;
+  --line-2: #f2f4f7;
+  --line-strong: #e3e8ef;
+  --brand: #1565c0;
+  --brand-d: #0d47a1;
+  --brand-l: #e8f0fb;
+  --on-primary: #ffffff;
+  --accent: #fdb913;
+  --accent-d: #e0a00a;
+  --accent-l: #fff6d9;
+  --on-accent: #212121;
+  --gold: #c8a24c;
+  --rose: #c97b84;
+  --ok: #1b8a3a;
+  --ok-l: #e9f6ec;
+  --info-l: #e8f0fb;
+  --coral: #e53935;
+  --coral-d: #c62828;
+  --coral-l: #feecec;
+  --header-bg: #ffffff;
+  --hero-bg: linear-gradient(115deg, #0d47a1 0%, #1565c0 48%, #1e6fd0 100%);
+  --radius: 16px;
+  --radius-s: 12px;
+  --shadow-1: 0 1px 2px rgba(33, 33, 33, .04);
+  --shadow-2: 0 12px 28px rgba(21, 101, 192, .12);
+  --focus: #fdb913;
+  --font: "Hanken Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Cormorant Garamond", "Times New Roman", serif;
+  --hdr-h: 72px;
+}
+[data-theme="dark"] {
+  --paper: #0f141c;
+  --paper-2: #1a2230;
+  --card: #151c28;
+  --ink: #f2f4f7;
+  --ink-2: #b8c0cc;
+  --ink-3: #8b95a5;
+  --line: #273244;
+  --line-2: #1e2736;
+  --line-strong: #334155;
+  --brand: #64b5f6;
+  --brand-d: #90caf9;
+  --brand-l: #1a2f4a;
+  --on-primary: #0a1628;
+  --accent: #fdb913;
+  --accent-d: #fdb913;
+  --accent-l: #3a2f0a;
+  --on-accent: #212121;
+  --header-bg: rgba(15, 20, 28, .92);
+  --hero-bg: linear-gradient(115deg, #0d47a1 0%, #1565c0 55%, #1976d2 100%);
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, .35);
+  --shadow-2: 0 14px 32px rgba(0, 0, 0, .45);
+}
+
+body.cf {
+  font-family: var(--font);
+  background: var(--paper);
+  color: var(--ink);
+}
+h1, h2, .section__head h2, .page-head h1, .footer-h {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -.01em;
+}
+h1 { font-size: clamp(2rem, 4.5vw, 3.25rem); line-height: 1.08; }
+h2, .section__head h2 { font-size: clamp(1.45rem, 2.4vw, 1.85rem); }
+.section__head h2::before { display: none; }
+.section__head { margin-bottom: 18px; }
+.link-arrow {
+  color: var(--brand);
+  font-family: var(--font);
+  font-weight: 600;
+  font-size: .92rem;
+  text-decoration: none;
+}
+.link-arrow:hover { color: var(--brand-d); text-decoration: underline; }
+.link-arrow .icon { display: none; }
+
+.btn { border-radius: 999px; font-weight: 600; letter-spacing: 0; }
+.btn--primary { background: var(--brand); color: var(--on-primary); }
+.btn--primary:hover { background: var(--brand-d); color: var(--on-primary); }
+.btn--accent { background: var(--accent); color: var(--on-accent); box-shadow: none; }
+.btn--accent:hover { filter: brightness(.97); color: var(--on-accent); }
+.btn--ghost { background: transparent; border: 1px solid var(--line-strong); color: var(--ink); }
+.btn--ghost:hover { background: var(--paper-2); color: var(--ink); }
+.btn--ghost-on-dark {
+  background: transparent; border: 1.5px solid rgba(255,255,255,.75); color: #fff; border-radius: 999px;
+}
+.btn--ghost-on-dark:hover { background: rgba(255,255,255,.12); color: #fff; }
+
+/* Header — clean white bar, soft search, round icon actions */
+.cf-header { background: var(--header-bg); border-bottom: 1px solid var(--line); box-shadow: none; }
+.cf-header::before { display: none; }
+.cf-header__bar { min-height: 72px; gap: 16px; }
+.cf-search {
+  background: var(--paper-2); border: 0; border-radius: 999px; padding: 0 6px 0 16px;
+  box-shadow: none; max-width: 420px;
+}
+.cf-search:focus-within { box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 22%, transparent); background: #fff; border: 1px solid var(--brand); }
+.cf-search .icon { color: var(--ink-3); }
+.cf-search input[type="search"] { min-height: 42px; font-size: .95rem; }
+.cf-search__go {
+  width: 38px; height: 38px; min-height: 38px; padding: 0; border-radius: 50%;
+  display: grid; place-items: center; background: var(--brand); color: #fff;
+}
+.cf-search__go .icon { width: 18px; height: 18px; color: #fff; }
+.cf-search__go:hover { background: var(--brand-d); }
+.cf-nav__link {
+  color: var(--ink-2); font-weight: 500; font-size: .94rem; border-radius: 999px; padding: 8px 12px;
+}
+.cf-nav__link:hover { background: var(--paper-2); color: var(--ink); }
+.cf-nav__link.is-active { background: var(--brand-l); color: var(--brand-d); }
+.icon-btn--soft,
+.cf-actions .icon-btn {
+  width: 42px; height: 42px; border-radius: 50%; background: var(--brand-l); color: var(--brand);
+  border: 0;
+}
+.icon-btn--soft:hover,
+.cf-actions .icon-btn:hover { background: color-mix(in srgb, var(--brand) 18%, white); color: var(--brand-d); }
+.cf-header .account-pill {
+  width: 42px; height: 42px; border-radius: 50%; padding: 0; display: grid; place-items: center;
+  background: var(--brand-l); border: 0;
+}
+.tn-link { color: var(--ink-2); font-weight: 500; }
+
+/* Promo hero — Rosie depot-band energy */
+.cf-hero--promo {
+  display: grid; grid-template-columns: 1.15fr .85fr; gap: 0; align-items: stretch;
+  margin: 18px 0 8px; padding: 0; overflow: hidden;
+  border-radius: 20px; border: 0; color: #fff;
+  background: var(--hero-bg);
+  box-shadow: var(--shadow-2);
+  min-height: clamp(220px, 32vw, 340px);
+}
+.cf-hero--promo::before {
+  background:
+    radial-gradient(420px 240px at 92% 18%, rgba(253, 185, 19, .28), transparent 70%),
+    radial-gradient(280px 200px at 70% 100%, rgba(255,255,255,.1), transparent 70%);
+}
+.cf-hero--promo .hero-paths { opacity: .18; color: #fff; }
+.cf-hero--promo .cf-hero__text {
+  padding: clamp(28px, 5vw, 56px); display: flex; flex-direction: column; justify-content: center;
+}
+.cf-hero--promo .eyebrow {
+  display: inline-flex; align-self: start; margin: 0 0 12px; padding: 0;
+  background: none; border-radius: 0; color: var(--gold);
+  font-family: var(--font); font-size: .78rem; font-weight: 700;
+  letter-spacing: .16em; text-transform: uppercase;
+}
+.cf-hero--promo h1 {
+  font-family: var(--font-display); font-weight: 600; color: #fff;
+  font-size: clamp(2.2rem, 5vw, 3.6rem); line-height: 1.05; margin: 0 0 12px;
+}
+.cf-hero--promo .cf-hero__lead {
+  color: rgba(255,255,255,.88); max-width: 40ch; margin: 0 0 22px; font-size: 1.05rem;
+}
+.cf-hero__ctas { gap: 12px; }
+.cf-hero__aside {
+  display: grid; place-items: center; padding: clamp(20px, 3vw, 36px);
+  background:
+    linear-gradient(160deg, rgba(13, 71, 161, .35), rgba(13, 71, 161, .7)),
+    radial-gradient(circle at 30% 40%, rgba(253,185,19,.2), transparent 55%);
+}
+.cf-hero__panel {
+  width: min(100%, 320px); padding: 22px 24px; border-radius: 16px;
+  background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.22);
+  backdrop-filter: blur(8px);
+}
+.cf-hero__panel-kicker {
+  margin: 0; color: var(--gold); font-size: .8rem; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase;
+}
+.cf-hero__panel .cf-hero__rotate,
+.cf-hero__panel .rotator__word {
+  margin: 8px 0 14px; color: #fff; font-family: var(--font-display);
+  font-size: clamp(1.4rem, 2.5vw, 1.85rem); font-weight: 600; line-height: 1.15;
+}
+.cf-hero__panel-meta {
+  display: flex; align-items: center; gap: 8px; margin: 0;
+  color: rgba(255,255,255,.9); font-size: .9rem;
+}
+.cf-hero__panel-meta .icon { width: 16px; height: 16px; color: var(--accent); }
+
+/* Soft spot cards */
+.spot--soft { gap: 14px; margin-top: 20px; }
+.spot--soft .spot__card {
+  color: var(--ink); background: var(--card); border: 1px solid var(--line);
+  box-shadow: var(--shadow-1); border-radius: 16px;
+}
+.spot--soft .spot__card:hover { color: var(--ink); transform: translateY(-2px); box-shadow: var(--shadow-2); }
+.spot--soft .spot__card::after { display: none; }
+.spot--soft .spot__icon {
+  background: var(--brand-l); color: var(--brand); border-radius: 14px; width: 52px; height: 52px;
+}
+.spot--soft .spot__icon .icon { color: var(--brand); }
+.spot--soft .spot__text strong { font-family: var(--font-display); font-size: 1.25rem; font-weight: 600; }
+.spot--soft .spot__text small { color: var(--ink-2); opacity: 1; }
+.spot--soft .spot__go { color: var(--brand); font-weight: 600; }
+.spot--soft .spot--business,
+.spot--soft .spot--lf { background: var(--card); color: var(--ink); }
+
+/* Category rail — Rosie icon tiles */
+.cats--rail {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(96px, 1fr);
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  scrollbar-width: thin;
+}
+.cat--tile {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  padding: 8px 4px 4px; border: 0; background: transparent; text-decoration: none; color: var(--ink);
+  box-shadow: none; transform: none; border-bottom: 0;
+}
+.cat--tile:hover { transform: none; box-shadow: none; background: transparent; }
+.cat--tile .cat__icon {
+  width: 72px; height: 72px; border-radius: 16px;
+  background: var(--paper-2); color: var(--brand);
+}
+.cat--tile:hover .cat__icon { background: var(--brand-l); color: var(--brand-d); }
+.cat--tile .cat__icon .icon { width: 28px; height: 28px; stroke-width: 1.75; color: inherit; }
+.cat--tile .cat__name {
+  font-family: var(--font); font-size: .82rem; font-weight: 500;
+  text-align: center; line-height: 1.25; max-width: 9.5ch;
+}
+
+/* Listing cards */
+.listing {
+  border: 1px solid var(--line); border-top: 1px solid var(--line);
+  border-radius: 16px; overflow: hidden; box-shadow: none;
+  transition: box-shadow .18s ease, transform .18s ease;
+}
+.listing:hover { box-shadow: var(--shadow-2); transform: translateY(-2px); }
+.listing--promo { box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 55%, transparent); }
+.listing__price { color: var(--brand-d); font-weight: 700; }
+.tag--gold { background: var(--accent); color: var(--on-accent); border-radius: 999px; }
+.tag--blue { background: var(--brand); color: #fff; border-radius: 999px; }
+.cat-tag { background: var(--brand-l); color: var(--brand-d); border-radius: 999px; }
+
+/* Footer */
+.cf-footer { background: var(--paper-2); border-top: 1px solid var(--line); color: var(--ink-2); }
+.cf-footer a { color: var(--ink); }
+.cf-footer .footer-h { color: var(--ink); }
+.tabbar .tab.is-active { color: var(--brand); }
+.tab--post { background: var(--accent); color: var(--on-accent); }
+
+@media (max-width: 860px) {
+  .cf-hero--promo { grid-template-columns: 1fr; min-height: 0; }
+  .cf-hero__aside { display: none; }
+  .cats--rail { grid-auto-columns: 88px; }
+  .cat--tile .cat__icon { width: 64px; height: 64px; }
+}
