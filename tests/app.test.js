@@ -851,7 +851,7 @@ test('lost & found form: photo uploader is offered with guidance that matches lo
 
   const home = (await new Client().get('/')).text;
   assert.match(home, /add a photo/i, 'the home page invites a photo with a lost report');
-  assert.match(home, /Post a photo, what you found/);
+  assert.match(home, /Post a photo and where you left it/);
 });
 test('search visibility: robots points to the sitemap, sitemap lists live listings, structured data on home and listing pages', async () => {
   const c = await signup('Sena Visible', 'sena@campus.test');
