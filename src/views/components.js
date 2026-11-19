@@ -122,6 +122,9 @@ function trustBadge(u, cls = 'pf-badge') {
   return '';
 }
 
+/** Gold "Pro seller" badge while the member has a paid promotion running. */
+const proBadge = (u, cls = 'pf-badge') => (require('../services/pro').isPro(u) ? html`<span class="${cls} ${cls}--pro" title="Has a paid promotion running">${icon('star')} Pro seller</span>` : '');
+
 /** Phone notifications switch. Hidden until app.js knows this browser can do push (or needs the iPhone Home Screen step). */
 const pushCard = () => html`<section class="card form-card stack push-card" id="push" data-push hidden aria-labelledby="h-push">
   <h2 id="h-push">${icon('bell')} Phone notifications</h2>
@@ -159,7 +162,7 @@ function listingCard(l) {
           ${l.location ? html`<span>${icon('pin')} ${l.location}</span>` : ''}
           <span>${icon('clock')} ${timeAgo(l.published_at || l.created_at)}</span>
         </p>
-        ${l.owner_name ? html`<p class="listing__who">${avatar(l.owner_name, { size: 'xs' })}<span>${l.owner_name}</span>${l.owner_trust ? html`<span class="vmark vmark--${l.owner_trust}" title="${l.owner_trust === 'student' ? 'Verified student' : 'Email verified'}">${icon(l.owner_trust === 'student' ? 'shield' : 'check')}<span class="sr-only">${l.owner_trust === 'student' ? 'Verified student' : 'Email verified'}</span></span>` : ''}</p>` : ''}
+        ${l.owner_name ? html`<p class="listing__who">${avatar(l.owner_name, { size: 'xs' })}<span>${l.owner_name}</span>${l.owner_pro ? html`<span class="promark" title="Pro seller">${icon('star')}<span class="sr-only">Pro seller</span></span>` : ''}${l.owner_trust ? html`<span class="vmark vmark--${l.owner_trust}" title="${l.owner_trust === 'student' ? 'Verified student' : 'Email verified'}">${icon(l.owner_trust === 'student' ? 'shield' : 'check')}<span class="sr-only">${l.owner_trust === 'student' ? 'Verified student' : 'Email verified'}</span></span>` : ''}</p>` : ''}
       </div>
     </article>`;
 }
@@ -245,4 +248,4 @@ const brandLogo = () => html`<img class="brand__logo brand__logo--full brand__lo
 /** Light artwork for always-dark surfaces (footer, sign-in panel). */
 const brandLogoOnDark = () => html`<img class="brand__logo brand__logo--fixed" src="/img/logo-light.png" alt="CampusFind" width="140" height="46">`;
 
-module.exports = { turnstileWidget, avatar, initialOf, icon, timeAgo, fmtDate, csrf, flashes, priceLabel, badge, listingCard, pagination, field, errorSummary, confirmBtn, brandLogo, brandLogoOnDark, isFeaturedNow, promoTierNow, STATUS_LABEL, trustBadge, pushCard };
+module.exports = { turnstileWidget, avatar, initialOf, icon, timeAgo, fmtDate, csrf, flashes, priceLabel, badge, listingCard, pagination, field, errorSummary, confirmBtn, brandLogo, brandLogoOnDark, isFeaturedNow, promoTierNow, STATUS_LABEL, trustBadge, pushCard, proBadge };

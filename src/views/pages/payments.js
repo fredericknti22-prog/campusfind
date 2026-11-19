@@ -1,5 +1,5 @@
 'use strict';
-const { html } = require('../../lib/html');
+const { html, raw } = require('../../lib/html');
 const config = require('../../config');
 const { page } = require('../layout');
 const { shell } = require('./admin');
@@ -11,7 +11,7 @@ const STATUS = {
   cancelled: ['Cancelled', 'muted'], refunded: ['Refunded', 'muted'], failed: ['Not completed', 'muted'],
 };
 /** Order chip that also says when the member has reported paying and staff are checking. */
-const orderChip = (o) => (o.status === 'awaiting_payment' && o.claimed_at ? html`<span class="chip chip--tone">Checking payment</span>`
+const orderChip = (o) => (o.status === 'paid' && o.needs_listing ? html`<span class="chip chip--warn">Paid · choose a listing</span>` : o.status === 'awaiting_payment' && o.claimed_at ? html`<span class="chip chip--tone">Checking payment</span>`
   : o.status === 'cancelled' && o.cancel_reason === 'expired' ? html`<span class="chip chip--tone">Expired, not paid</span>` : statusChip(o.status));
 const statusChip = (s) => { const [label, tone] = STATUS[s] || [s, 'muted']; return html`<span class="chip chip--${tone === 'ok' ? 'ok' : tone === 'warn' ? 'warn' : 'tone'}">${label}</span>`; };
 
@@ -19,7 +19,7 @@ const statusChip = (s) => { const [label, tone] = STATUS[s] || [s, 'muted']; ret
 function pricing(req, { products, online }) {
   const rows = [
     { name: 'Basic student listing', price: 'Free', note: 'Every member can post, within the daily limit.', points: ['Listed in browse and search', 'Photos, messages and reports included'], cta: 'Post a free listing', href: '/listings/new' },
-    ...products.map((p) => ({ name: p.name, price: money(p.price), note: `${p.days} days · one-off payment`, points: p.includes, key: p.key, cta: `Choose a listing · ${money(p.price)}`, href: '/my/listings' })),
+    ...products.map((p) => ({ name: p.name, price: money(p.price), note: `${p.days} days · one-off payment`, points: p.includes, key: p.key, cta: `Pay ${money(p.price)}`, href: '/pricing' })),
   ];
   const go = (href) => (req.user ? href : `/login?next=${encodeURIComponent(href)}`);
   return page(req, {
@@ -35,10 +35,22 @@ function pricing(req, { products, online }) {
           <p class="plan__price">${r.price}</p>
           <p class="muted small">${r.note}</p>
           <ul class="plan__list">${r.points.map((x) => html`<li>${icon('check')} ${x}</li>`)}</ul>
-          <a class="btn ${r.key ? 'btn--primary' : 'btn--ghost'} btn--block plan__cta" href="${go(r.href)}">${r.key ? icon('star') : icon('plus')} ${r.cta}</a>
-          ${r.key ? html`<p class="muted xsmall center">Then tap <strong>Promote</strong> on the listing you want to boost.</p>` : ''}
+          ${r.key && req.user ? html`<form method="post" action="/pricing/${r.key}/buy">${csrf(req)}<button class="btn btn--primary btn--block plan__cta" type="submit">${icon('star')} ${r.cta}</button></form>`
+            : html`<a class="btn ${r.key ? 'btn--primary' : 'btn--ghost'} btn--block plan__cta" href="${go(r.href)}">${r.key ? icon('star') : icon('plus')} ${r.key ? `Sign in to pay` : r.cta}</a>`}
+          ${r.key ? html`<p class="muted xsmall center">Pay first. Once your payment is confirmed you choose which listing to promote.</p>` : ''}
         </article>`)}
       </div>
+
+      <section class="card pad pro-perks" aria-labelledby="h-pro">
+        <h2 id="h-pro">${icon('star')} Every paid plan makes you a Pro seller</h2>
+        <p class="muted small">For as long as your promotion runs:</p>
+        <ul class="plan__list pro-perks__list">
+          <li>${icon('check')} <strong>Gold “Pro seller” badge</strong> on your profile, listings and seller box</li>
+          <li>${icon('check')} <strong>10 photos</strong> per listing instead of 4</li>
+          <li>${icon('check')} <strong>Listings stay live</strong> for the whole period, with no renewing</li>
+          <li>${icon('check')} <strong>Listing stats</strong>: views, saves and chats for every listing</li>
+        </ul>
+      </section>
 
       <section class="card form-card stack pricing-notes" aria-labelledby="h-terms">
         <h2 id="h-terms">What you should know before you pay</h2>
@@ -55,7 +67,7 @@ function pricing(req, { products, online }) {
 }
 
 /* ---------------------------------------------------------------- choose a promotion */
-function promote(req, { l, products, online }) {
+function promote(req, { l, products, online, forBusiness = false }) {
   return page(req, {
     title: 'Promote your listing', active: 'mine',
     body: html`
@@ -63,6 +75,7 @@ function promote(req, { l, products, online }) {
       <div class="page-head"><div><h1>Promote your listing</h1>
         <p class="muted">Listing: <strong>${l.title}</strong></p>
         <p class="muted">Each promotion is a one-off payment and does not renew by itself.</p></div></div>
+      ${forBusiness ? html`<div class="banner banner--info">${icon('store')}<div><strong>Pay to publish your business.</strong> Your listing is saved. It goes live as soon as your Business advertisement payment is confirmed, and you become a Pro seller for the same period.</div></div>` : ''}
       <div class="plans">
         ${products.map((p) => html`<article class="card plan${p.key === 'premium' ? ' plan--top' : ''}">
           <h2>${p.name}</h2><p class="muted small">${p.tagline}</p>
@@ -78,13 +91,13 @@ function promote(req, { l, products, online }) {
 }
 
 /* ---------------------------------------------------------------- one order */
-function orderDetail(req, { order, instructions, momo = {} }) {
+function orderDetail(req, { order, instructions, momo = {}, choices = [] }) {
   const manualDue = order.provider === 'manual' && order.status === 'awaiting_payment';
   return page(req, {
     title: `Order #${order.order_id}`, active: 'mine',
     body: html`
       <nav class="crumbs" aria-label="Breadcrumb"><a href="/orders">My orders</a> ${icon('arrow')} <span>Order #${order.order_id}</span></nav>
-      <div class="page-head"><div><h1>Order #${order.order_id}</h1><p class="muted">${order.product_name} for “${order.listing_title}”</p></div>${orderChip(order)}</div>
+      <div class="page-head"><div><h1>Order #${order.order_id}</h1><p class="muted">${order.product_name}${order.listing_title ? html` for “${order.listing_title}”` : ' (you choose the listing after payment)'}</p></div>${orderChip(order)}</div>
       <section class="card form-card stack">
         <dl class="facts">
           <div><dt>Amount</dt><dd><strong>${money(order.amount)}</strong> (${order.currency}), one-off</dd></div>
@@ -117,7 +130,14 @@ function orderDetail(req, { order, instructions, momo = {} }) {
               </form>` : ''}
           <form method="post" action="/orders/${order.order_id}/cancel">${csrf(req)}<button class="btn btn--ghost" type="submit">Cancel this order</button></form>` : ''}
         ${order.status === 'pending' ? html`<div class="banner banner--info">${icon('clock')}<div>We are waiting for confirmation from Paystack. If you have paid, your promotion switches on automatically within a few minutes.</div></div>` : ''}
-        ${order.status === 'paid' ? html`<a class="btn btn--primary" href="/listings/${order.listing_id}">${icon('arrow')} View your promoted listing</a>` : ''}
+        ${order.status === 'paid' && order.needs_listing ? html`<section class="card pad stack apply-card" id="apply"><h2>${icon('star')} Payment received. Choose the listing to promote</h2>
+          <p class="muted small">The ${order.days} days start when you choose. Your Pro seller perks are already on.</p>
+          ${choices.length ? html`<form method="post" action="/orders/${order.order_id}/apply" class="stack">${csrf(req)}
+            <div class="choices">${choices.map((l, i) => html`<label class="choice"><input type="radio" name="listing_id" value="${l.listing_id}"${i === 0 ? raw(' checked') : ''} required><span><strong>${l.title}</strong><small>${l.awaiting_payment ? 'Waiting for payment, goes live now' : 'Live'}</small></span></label>`)}</div>
+            <button class="btn btn--primary" type="submit">${icon('check')} Promote this listing</button></form>`
+          : html`<p>You have no live listings yet. <a href="/listings/new">Post one</a>, then come back to this order to use your payment.</p>`}
+        </section>` : ''}
+        ${order.status === 'paid' && !order.needs_listing && order.listing_id ? html`<a class="btn btn--primary" href="/listings/${order.listing_id}">${icon('arrow')} View your promoted listing</a>` : ''}
         ${order.status === 'cancelled' && order.cancel_reason === 'expired' ? html`<div class="banner banner--info">${icon('clock')}<div>This order expired because no payment arrived within ${require('../../services/payments').STALE_DAYS} days. Nothing was charged. <a href="/listings/${order.listing_id}/promote">Order again</a> if you still want the promotion.</div></div>` : ''}
       </section>`,
   });
@@ -131,7 +151,7 @@ function myOrders(req, { items }) {
       ${items.length
         ? html`<ul class="manage">${items.map((o) => html`<li class="card manage__row"><div class="manage__main">
             <p class="manage__title"><a href="/orders/${o.order_id}">Order #${o.order_id}</a> ${orderChip(o)}</p>
-            <p class="muted small">${o.product_name} · “${o.listing_title}” · ${money(o.amount)} · ${timeAgo(o.created_at)}</p></div></li>`)}</ul>`
+            <p class="muted small">${o.product_name} · ${o.listing_title ? html`“${o.listing_title}”` : o.status === 'paid' && o.needs_listing ? html`<strong>choose a listing</strong>` : 'listing chosen after payment'} · ${money(o.amount)} · ${timeAgo(o.created_at)}</p></div></li>`)}</ul>`
         : html`<div class="empty">${icon('tag', 'icon--xl')}<h2>No orders yet</h2><p>Promote a listing to get more views.</p><a class="btn btn--primary" href="/my/listings">Promote a listing</a></div>`}`,
   });
 }
@@ -153,7 +173,7 @@ function adminOrders(req, { items, revenue30, paidCount30, waiting, claimed = 0 
           <td>${o.order_id}<br><code class="xsmall">${o.reference}</code></td>
           <td>${timeAgo(o.created_at)}</td>
           <td>${o.who ? html`<a href="/admin/users/${o.who.user_id}">${o.who.name}</a>` : 'Deleted user'}</td>
-          <td>${o.product_name}<br><a class="small" href="/listings/${o.listing_id}">${o.listing_title}</a></td>
+          <td>${o.product_name}<br>${o.listing_id ? html`<a class="small" href="/listings/${o.listing_id}">${o.listing_title}</a>` : html`<span class="small muted">Pay first · listing chosen after payment</span>`}</td>
           <td>${money(o.amount)}</td><td>${o.provider}</td><td>${orderChip(o)}${o.claimed_at && o.status === 'awaiting_payment' ? html`<br><span class="xsmall muted">Member says paid ${timeAgo(o.claimed_at)}<br>MoMo ID <code>${o.payer_ref}</code></span>` : ''}${o.payer_ref && o.status !== 'awaiting_payment' ? html`<br><span class="xsmall muted">MoMo ID <code>${o.payer_ref}</code></span>` : ''}</td>
           <td class="nowrap">
             ${['awaiting_payment', 'pending'].includes(o.status) ? html`<form method="post" action="/admin/orders/${o.order_id}/confirm" class="inline-form">${csrf(req)}<button class="btn btn--primary btn--sm" type="submit">Confirm payment received</button></form>` : ''}

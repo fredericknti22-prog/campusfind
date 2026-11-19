@@ -1,4 +1,5 @@
 'use strict';
+const listings = require('../repo/listings');
 /** Pricing, paid promotions, order history and the admin order tools. */
 const express = require('express');
 const config = require('../config');
@@ -20,22 +21,49 @@ const orderLimiter = sharedRateLimit({
 /* ----- public price list ----- */
 router.get('/pricing', (req, res) => res.render('pricing', { products: payments.productList(), online: payments.onlinePaymentsOn() }));
 
+/* ----- pay first from the Pricing page; the listing is chosen after payment ----- */
+router.post('/pricing/:product/buy', requireLogin, requireActive, orderLimiter, async (req, res) => {
+  if (!payments.PRODUCTS[req.params.product]) { req.flash('error', 'Choose one of the promotions.'); return res.redirect('/pricing'); }
+  const order = await payments.createOrder({ user: req.user, listing: null, productKey: req.params.product });
+  await audit({ actor: req.user, action: 'order.create', entityType: 'order', entityId: order.order_id, meta: { product: order.product, provider: order.provider, payFirst: true }, ip: req.ip });
+  if (order.provider === 'paystack') {
+    try { return res.redirect(await payments.initializeCheckout(order, req.user)); } catch (err) {
+      console.error('[payments] could not start checkout:', err.message);
+      await orders.update(order.order_id, { status: 'failed' });
+      req.flash('error', 'We could not open the payment page just now. Nothing was charged. Please try again in a moment.');
+      return res.redirect('/pricing');
+    }
+  }
+  return res.redirect(`/orders/${order.order_id}`);
+});
+
+router.post('/orders/:id/apply', requireLogin, async (req, res) => {
+  const id = /^\d{1,9}$/.test(req.params.id) ? Number(req.params.id) : null;
+  const lid = /^\d{1,9}$/.test(String(req.body.listing_id || '')) ? Number(req.body.listing_id) : null;
+  if (!id || !lid) { req.flash('error', 'Choose a listing.'); return res.redirect(id ? `/orders/${id}` : '/orders'); }
+  const r = await payments.applyToListing(id, req.user, lid);
+  if (r.ok) { req.flash('success', `Done. “${String(r.listing.title).slice(0, 60)}” is promoted for ${r.order.days} days.`); return res.redirect(`/listings/${lid}`); }
+  req.flash('error', { used: 'This payment has already been used for a listing.', 'not-live': 'Choose one of your live listings.', forbidden: 'You can only promote your own listings.' }[r.error] || 'That did not work. Please try again.');
+  return res.redirect(`/orders/${id}`);
+});
+
 /* ----- choose a promotion for a listing ----- */
 router.get('/listings/:id/promote', requireLogin, loadListingForOwner, (req, res) => {
-  if (req.listing.status !== 'active') {
+  if (req.listing.status !== 'active' && !req.listing.awaiting_payment) {
     req.flash('info', 'Only live listings can be promoted. Make the listing live first.');
     return res.redirect('/my/listings');
   }
-  res.render('promote', { l: req.listing, products: payments.productList(), online: payments.onlinePaymentsOn() });
+  const forBusiness = Boolean(req.listing.awaiting_payment);
+  res.render('promote', { l: req.listing, products: payments.productList().filter((p) => !forBusiness || p.key !== 'featured'), online: payments.onlinePaymentsOn(), forBusiness });
 });
 
 router.post('/listings/:id/promote', requireLogin, requireActive, orderLimiter, loadListingForOwner, async (req, res) => {
   const l = req.listing;
-  if (l.status !== 'active') {
+  if (l.status !== 'active' && !l.awaiting_payment) {
     req.flash('error', 'Only live listings can be promoted.');
     return res.redirect('/my/listings');
   }
-  if (!payments.PRODUCTS[req.body.product]) {
+  if (!payments.PRODUCTS[req.body.product] || (l.awaiting_payment && req.body.product === 'featured')) {
     req.flash('error', 'Choose one of the promotions.');
     return res.redirect(`/listings/${l.listing_id}/promote`);
   }
@@ -92,7 +120,11 @@ async function myOrder(req, res) {
 
 router.get('/orders/:id', requireLogin, async (req, res) => {
   const order = await myOrder(req, res);
-  if (order) res.render('orderDetail', { order, instructions: config.payments.manualInstructions, momo: require('../services/settings').momo() });
+  if (!order) return;
+  const choices = order.status === 'paid' && order.needs_listing
+    ? (await listings.byOwner(req.user.user_id)).filter((l) => !l.deleted_at && (l.status === 'active' || l.awaiting_payment)).sort((a, b) => b.updated_at - a.updated_at)
+    : [];
+  res.render('orderDetail', { order, choices, instructions: config.payments.manualInstructions, momo: require('../services/settings').momo() });
 });
 
 /* ----- member reports a Mobile Money payment so staff can match it ----- */

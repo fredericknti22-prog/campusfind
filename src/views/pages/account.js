@@ -149,6 +149,9 @@ function listingForm(req, { l = {}, categories, errors = {}, images = [], isEdit
           ${field({ name: 'location', label: 'Where on campus', value: l.location || '', error: errors.location, maxlength: 80, placeholder: 'e.g. Main library, Block C', hint: 'Optional. Avoid home addresses.' })}
         </div>
 
+        ${(() => { const biz = categories.find((c) => c.slug === 'business'); const P = config.payments; const m = require('../../services/payments').money;
+          return biz ? html`<div class="banner banner--warn pay-notice" data-show-when="category_id=${biz.category_id}" hidden>${icon('store')}<div>
+            <strong>Business listings need payment before they go live.</strong> After you fill this in, you pay for a Business advertisement (${m(P.prices.business)} for ${P.businessDays} days, or Premium ${m(P.prices.premium)}). Your listing goes live as soon as payment is confirmed, and you get the Pro seller perks.</div></div>` : ''; })()}
         ${field({ name: 'business_type', label: 'Type of business', as: 'select', value: l.business_type || '',
           options: [['', 'Not a business'], ...require('../../lib/businessTypes').TYPES.map((t) => [t.key, t.label])],
           hint: raw('Only used when the category is Business. Business listings must follow the <a href="/business-terms">Seller &amp; business terms</a>.') })}
@@ -165,7 +168,7 @@ function listingForm(req, { l = {}, categories, errors = {}, images = [], isEdit
           hint: 'Visible to signed-in members only. For example: phone or WhatsApp number, and preferred times.' })}
 
         ${config.photosEnabled ? html`<fieldset class="field uploader">
-          <legend><span data-photo-legend>${isLostFound ? 'Add a photo of the item' : 'Photos'}</span> <span class="muted small">(up to ${config.limits.imagesPerListing}, JPG/PNG/WebP, ${config.limits.imageBytes / 1024 / 1024} MB each)</span></legend>
+          <legend><span data-photo-legend>${isLostFound ? 'Add a photo of the item' : 'Photos'}</span> <span class="muted small">(up to ${require('../../services/pro').photoLimit(req.user)}, JPG/PNG/WebP, ${config.limits.imageBytes / 1024 / 1024} MB each)</span></legend>
           <div class="lf-tip" data-lf-tip${isLostFound ? '' : raw(' hidden')}>
             ${icon('camera')}
             <div>
@@ -176,7 +179,7 @@ function listingForm(req, { l = {}, categories, errors = {}, images = [], isEdit
           </div>
           ${images.length ? html`<ul class="thumbs">${images.map((im) => html`<li><img src="/uploads/${im.filename}" alt="" width="96" height="72" loading="lazy">
             <label class="check small"><input type="checkbox" name="remove_image" value="${im.image_id}"> Remove</label></li>`)}</ul>` : ''}
-          <input type="file" id="f-images" name="images" aria-label="Choose photos to upload" accept="image/jpeg,image/png,image/webp" multiple data-max="${config.limits.imageBytes}" data-slots="${config.limits.imagesPerListing - images.length}">
+          <input type="file" id="f-images" name="images" aria-label="Choose photos to upload" accept="image/jpeg,image/png,image/webp" multiple data-max="${config.limits.imageBytes}" data-slots="${require('../../services/pro').photoLimit(req.user) - images.length}">
           <div class="previews" data-previews></div>
           ${errors.images ? html`<p class="error-text">${errors.images}</p>` : ''}
         </fieldset>` : ''}
@@ -216,18 +219,20 @@ function listingForm(req, { l = {}, categories, errors = {}, images = [], isEdit
 const fresh = require('../../services/freshness');
 const dayLabel = (ms) => new Date(ms).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 
-function myListings(req, { items }) {
+function myListings(req, { items, stats = null }) {
   return page(req, {
     title: 'My listings', active: 'mine',
     body: html`
-      <div class="page-head"><div><h1>My listings</h1><p class="muted">Manage what you have posted.</p></div>
+      <div class="page-head"><div><h1>My listings</h1><p class="muted">Manage what you have posted.</p>${stats ? '' : html`<p class="small pro-teaser">${icon('star')} Pro sellers see views, saves and chats for every listing. <a href="/pricing">See plans</a></p>`}</div>
         <a class="btn btn--primary" href="/listings/new">${icon('plus')} New listing</a></div>
       ${items.length
         ? html`<ul class="manage">${items.map((l) => html`<li class="card manage__row">
             <a class="manage__thumb tone-${l.cat_tone ?? 0}" href="/listings/${l.listing_id}" tabindex="-1" aria-hidden="true">${l.cover ? html`<img src="/uploads/${l.cover}" alt="" width="72" height="72" loading="lazy">` : icon(l.cat_icon || 'tag')}</a>
             <div class="manage__main">
               <p class="manage__title"><a href="/listings/${l.listing_id}">${l.title}</a> ${fresh.isExpired(l) ? html`<span class="badge badge--expired">Expired</span>` : require('../../lib/deals').isSold(l) ? html`<span class="badge badge--sold">Sold</span>` : badge(l.status)}</p>
-              <p class="muted small">${l.cat_name} · ${priceLabel(l) || 'No price'} · ${l.views} views · updated ${timeAgo(l.updated_at)}</p>
+              <p class="muted small">${l.cat_name} · ${priceLabel(l) || 'No price'} · updated ${timeAgo(l.updated_at)}</p>
+              ${stats ? html`<p class="small manage__stats">${icon('eye')} ${l.views || 0} views · ${icon('bookmark')} ${(stats.get(Number(l.listing_id)) || {}).saves || 0} saves · ${icon('chat')} ${(stats.get(Number(l.listing_id)) || {}).chats || 0} chats</p>` : ''}
+              ${l.awaiting_payment ? html`<p class="small manage__fresh is-due">${icon('store')} Waiting for payment. <a href="/listings/${l.listing_id}/promote">Pay to publish</a></p>` : ''}
               ${l.status === 'active' && !fresh.exempt(l) ? html`<p class="small manage__fresh${fresh.canRenew(l) ? ' is-due' : ''}">${icon('clock')} Live until ${dayLabel(fresh.liveUntil(l))}</p>` : ''}
               ${fresh.isExpired(l) ? html`<p class="small manage__fresh is-due">${icon('clock')} Hidden from Browse since ${dayLabel(l.expired_at || l.updated_at)}. Still available? Renew it.</p>` : ''}
             </div>
@@ -347,6 +352,7 @@ function publicProfile(req, { person, p, items, joined, reviews = [], rating = {
             <h1 id="pf-name" class="pf-card__name">${person.name}</h1>
             ${study ? html`<p class="pf-card__study">${icon('book')} ${study}</p>` : ''}
             <div class="pf-card__badges">
+              ${require('../components').proBadge(person)}
               ${require('../components').trustBadge(person)}
               ${staff ? html`<span class="pf-badge pf-badge--staff">${icon('shield')} CampusFind team</span>` : ''}
               ${person.status === 'active' ? html`<span class="pf-badge pf-badge--ok">${icon('check')} Good standing</span>` : ''}

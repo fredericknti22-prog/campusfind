@@ -84,12 +84,13 @@ async function confirmWithProvider(order) {
 }
 
 /* ---------------------------------------------------------------- creating orders */
-async function createOrder({ user, listing, productKey }) {
+/** listing may be null: "pay first" from the Pricing page; the member picks the listing after payment. */
+async function createOrder({ user, listing = null, productKey }) {
   const product = PRODUCTS[productKey];
   if (!product) throw Object.assign(new Error('Unknown product'), { code: 'BAD_PRODUCT' });
   const online = onlinePaymentsOn();
   const order = await orders.create({
-    user_id: user.user_id, listing_id: listing.listing_id, listing_title: String(listing.title).slice(0, 90),
+    user_id: user.user_id, listing_id: listing ? listing.listing_id : null, listing_title: listing ? String(listing.title).slice(0, 90) : '',
     product: product.key, product_name: product.name, days: product.days,
     amount: product.price, currency: config.currency.code,
     provider: online ? 'paystack' : 'manual', status: online ? 'pending' : 'awaiting_payment',
@@ -131,23 +132,63 @@ async function fulfil(orderId, { by = null, provider = null } = {}) {
     const order = osnap.data();
     if (order.status === 'paid') return { applied: false, order };
     if (['cancelled', 'refunded'].includes(order.status)) return { applied: false, order, blocked: order.status };
+    const now = Date.now();
+    if (!order.listing_id) {
+      tx.update(oref, { status: 'paid', paid_at: now, confirmed_by: by, provider: provider || order.provider, needs_listing: true });
+      return { applied: true, unassigned: true, order: { ...order, status: 'paid', paid_at: now }, now };
+    }
     const lref = col('listings').doc(String(order.listing_id));
     const lsnap = await tx.get(lref);
-    const now = Date.now();
-    const lpatch = lsnap.exists ? applyProduct(lsnap.data(), order, now) : null;
+    let lpatch = lsnap.exists ? applyProduct(lsnap.data(), order, now) : null;
+    let published = false;
+    if (lpatch && lsnap.data().awaiting_payment) {
+      lpatch = { ...lpatch, status: 'active', awaiting_payment: false, published_at: lsnap.data().published_at || now };
+      published = !lsnap.data().published_at;
+    }
     tx.update(oref, { status: 'paid', paid_at: now, confirmed_by: by, provider: provider || order.provider });
     if (lpatch) tx.update(lref, lpatch);
-    return { applied: true, order: { ...order, status: 'paid', paid_at: now }, now };
+    return { applied: true, published, order: { ...order, status: 'paid', paid_at: now }, now };
   });
   if (result.applied) {
     listings.invalidate();
-    await notify(result.order.user_id, {
+    await require('./pro').grant(result.order.user_id, result.order.days, result.now);
+    if (result.published) await require('./alerts').onListingLive(result.order.listing_id);
+    await notify(result.order.user_id, result.unassigned ? {
       type: 'system', title: `Payment received: ${result.order.product_name}`,
-      body: `Your promotion for “${result.order.listing_title}” is now active for ${result.order.days} days.`, link: `/listings/${result.order.listing_id}`,
+      body: 'Now choose which listing to promote. Your Pro seller perks are switched on too.', link: `/orders/${result.order.order_id}`,
+    } : {
+      type: 'system', title: `Payment received: ${result.order.product_name}`,
+      body: `${result.published ? 'Your listing is now live and your' : 'Your'} promotion for “${result.order.listing_title}” is active for ${result.order.days} days. Pro seller perks are on.`, link: `/listings/${result.order.listing_id}`,
     });
     await audit({ actor: by ? { user_id: by.user_id, role: by.role } : null, action: 'order.paid', entityType: 'order', entityId: result.order.order_id, meta: { product: result.order.product, amount: result.order.amount, provider: provider || result.order.provider } });
   }
   return result;
+}
+
+/** After a "pay first" order is confirmed: apply it to one of the member's live listings, exactly once. */
+async function applyToListing(orderId, user, listingId) {
+  const oref = orders.ref(orderId);
+  const lref = col('listings').doc(String(listingId));
+  const res = await db.runTransaction(async (tx) => {
+    const [osnap, lsnap] = [await tx.get(oref), await tx.get(lref)];
+    if (!osnap.exists || !lsnap.exists) return { error: 'missing' };
+    const order = osnap.data(); const l = lsnap.data();
+    if (order.user_id !== user.user_id || l.owner_id !== user.user_id || l.deleted_at) return { error: 'forbidden' };
+    if (order.status !== 'paid' || !order.needs_listing) return { error: 'used' };
+    if (!(l.status === 'active' || l.awaiting_payment)) return { error: 'not-live' };
+    const now = Date.now();
+    let patch = applyProduct(l, order, now);
+    if (l.awaiting_payment) patch = { ...patch, status: 'active', awaiting_payment: false, published_at: l.published_at || now };
+    tx.update(lref, patch);
+    tx.update(oref, { needs_listing: false, listing_id: l.listing_id, listing_title: String(l.title).slice(0, 90), applied_at: now });
+    return { ok: true, order, listing: l, published: Boolean(l.awaiting_payment && !l.published_at) };
+  });
+  if (res.ok) {
+    listings.invalidate();
+    if (res.published) await require('./alerts').onListingLive(res.listing.listing_id);
+    await audit({ actor: user, action: 'order.applied', entityType: 'order', entityId: Number(orderId), meta: { listing: res.listing.listing_id } });
+  }
+  return res;
 }
 
 /** Take back the days an order added (refund). Does not touch other purchases beyond subtracting this order's days. */
@@ -210,4 +251,4 @@ async function expireStale({ force = false, now = Date.now() } = {}) {
   }
 }
 
-module.exports = { STALE_DAYS, expireStale, PRODUCTS, productList, onlinePaymentsOn, money, createOrder, initializeCheckout, confirmWithProvider, fulfil, revoke, validSignature, setPaystackClient };
+module.exports = { applyToListing, STALE_DAYS, expireStale, PRODUCTS, productList, onlinePaymentsOn, money, createOrder, initializeCheckout, confirmWithProvider, fulfil, revoke, validSignature, setPaystackClient };

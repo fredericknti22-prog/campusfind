@@ -79,7 +79,7 @@ async function visibleOwners(ids) {
     const found = await getMany('users', need);
     for (const id of need) {
       const u = found.get(String(id));
-      ownerCache.set(id, { at: now, ok: Boolean(u && !u.deleted_at && ['active', 'restricted'].includes(u.status)), name: u && !u.deleted_at ? u.name : '', trust: u && !u.deleted_at ? require('../lib/trust').level(u) : null });
+      ownerCache.set(id, { at: now, ok: Boolean(u && !u.deleted_at && ['active', 'restricted'].includes(u.status)), name: u && !u.deleted_at ? u.name : '', trust: u && !u.deleted_at ? require('../lib/trust').level(u) : null, pro_until: u && !u.deleted_at ? Number(u.pro_until) || 0 : 0 });
     }
   }
   return new Set(ids.map(Number).filter((id) => ownerCache.get(id) && ownerCache.get(id).ok));
@@ -89,9 +89,10 @@ const forget = (id) => ownerCache.delete(Number(id));
 /** Display name of a member whose standing was just checked by visibleOwners (empty when unknown). */
 const ownerName = (id) => (ownerCache.get(Number(id)) || {}).name || '';
 /** 'student' | 'email' | null for a member whose standing was just checked by visibleOwners. */
+const ownerPro = (id) => ((ownerCache.get(Number(id)) || {}).pro_until || 0) > Date.now();
 const ownerTrust = (id) => (ownerCache.get(Number(id)) || {}).trust || null;
 
 module.exports = {
   forget, getById, getByEmail, getByUid, create, update, increment, recent, createdSince, staff,
-  countByRole, countAll, countSince, countLocked, suspended, visibleOwners, ownerName, ownerTrust,
+  countByRole, countAll, countSince, countLocked, suspended, visibleOwners, ownerName, ownerTrust, ownerPro,
 };

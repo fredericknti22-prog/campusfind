@@ -30,8 +30,17 @@ async function sweep({ force = false, now = Date.now() } = {}) {
   try {
     const snap = await col('listings').where('status', '==', 'active').limit(3000).get();
     const raw = snap.docs.map((d) => d.data()).filter((l) => !l.deleted_at);
+    const owners = await require('../store').getMany('users', [...new Set(raw.map((l) => l.owner_id))]);
+    const pro = require('./pro');
     for (const l of await listings.hydrate(raw)) {
+      // a paid Business listing closes when its paid period ends (listings from before this rule are left alone)
+      if (l.cat_slug === 'business' && l.requires_payment && !(Number(l.promo_until) > now)) {
+        await listings.update(l.listing_id, { status: 'closed', outcome: 'unpaid', awaiting_payment: true, updated_at: now });
+        await notify(l.owner_id, { type: 'system', title: `Your business ad for “${String(l.title).slice(0, 60)}” has ended`, body: 'Pay for another period to put it back on CampusFind.', link: `/listings/${l.listing_id}/promote` });
+        continue;
+      }
       if (exempt(l)) continue;
+      if (pro.isPro(owners.get(String(l.owner_id)))) continue; // Pro perk: no expiry while the paid period runs
       const end = liveUntil(l);
       const title = String(l.title).slice(0, 60);
       if (end <= now) {

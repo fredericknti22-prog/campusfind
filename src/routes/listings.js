@@ -27,8 +27,8 @@ function gate(req, res, next) {
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: config.limits.imageBytes, files: config.limits.imagesPerListing, fields: 20, fieldSize: 20_000, parts: 40 },
-}).array('images', config.limits.imagesPerListing);
+  limits: { fileSize: config.limits.imageBytes, files: 10, fields: 24, fieldSize: 20_000, parts: 48 },
+}).array('images', 10);
 
 /** Parse multipart safely, convert multer errors to a friendly message, then check CSRF. */
 const uploadParse = [
@@ -37,7 +37,7 @@ const uploadParse = [
       req.uploadError = err.code === 'LIMIT_FILE_SIZE'
         ? `Each photo must be under ${config.limits.imageBytes / 1024 / 1024} MB.`
         : ['LIMIT_FILE_COUNT', 'LIMIT_UNEXPECTED_FILE'].includes(err.code)
-          ? `You can upload up to ${config.limits.imagesPerListing} photos.`
+          ? 'You can upload up to 10 photos (4 on a free account).'
           : 'We could not read that upload. Try again with JPG, PNG or WebP photos.';
     }
     next();
@@ -206,7 +206,12 @@ router.post('/listings/new', requireLogin, requireActive, createLimiter, uploadP
   if (staged.error) errors.images = staged.error;
   if (Object.keys(errors).length) return renderBack();
 
-  const publish = req.body.intent !== 'draft';
+  const pro = require('../services/pro');
+  if (staged.images && staged.images.length > pro.photoLimit(req.user)) return renderBack({ images: `You can add up to ${pro.photoLimit(req.user)} photos. Pro sellers can add ${pro.PRO_PHOTOS}.` });
+  const isBusiness = (cats.find((c) => c.category_id === v.category_id) || {}).slug === 'business';
+  const wantsLive = req.body.intent !== 'draft';
+  // Business listings only go live after a paid Business advertisement
+  const publish = wantsLive && !isBusiness;
   const now = Date.now();
   const imgs = await storeImages(staged.images, 0);
   const listing = await listings.create({
@@ -214,10 +219,23 @@ router.post('/listings/new', requireLogin, requireActive, createLimiter, uploadP
     price_type: v.price_type, price_cents: v.price_cents, location: v.location, contact: v.contact, business_type: v.business_type,
     status: publish ? 'active' : 'draft', created_at: now, updated_at: now, published_at: publish ? now : null,
     images: imgs, cover: imgs[0] ? imgs[0].filename : null,
+    ...(isBusiness ? { requires_payment: true, awaiting_payment: wantsLive } : {}),
   });
   await audit({ actor: req.user, action: 'listing.create', entityType: 'listing', entityId: listing.listing_id, ip: req.ip });
   if (publish) await flagIfSuspicious(listing, v);
   if (publish) await require('../services/alerts').onListingLive(listing.listing_id);
+  if (isBusiness && wantsLive) {
+    const payments = require('../services/payments');
+    // a payment already made from the Pricing page (business or premium) is used straight away
+    const credit = (await require('../repo/orders').byUser(req.user.user_id)).find((o) => o.status === 'paid' && o.needs_listing && ['business', 'premium'].includes(o.product));
+    if (credit) {
+      await payments.applyToListing(credit.order_id, req.user, listing.listing_id);
+      req.flash('success', 'Your business listing is live, using the payment you already made.');
+      return res.redirect(`/listings/${listing.listing_id}`);
+    }
+    req.flash('info', 'Almost done. Business listings go live once the Business advertisement is paid. Choose a plan below.');
+    return res.redirect(`/listings/${listing.listing_id}/promote`);
+  }
   req.flash('success', publish ? 'Your listing has been published.' : 'Draft saved.');
   res.redirect(`/listings/${listing.listing_id}`);
 });
@@ -225,7 +243,9 @@ router.post('/listings/new', requireLogin, requireActive, createLimiter, uploadP
 /* ------------------------------------------------------------ mine */
 router.get('/my/listings', requireLogin, async (req, res) => {
   const mine = (await listings.byOwner(req.user.user_id)).filter((l) => !l.deleted_at).sort((a, b) => b.updated_at - a.updated_at);
-  res.render('myListings', { items: await listings.hydrate(mine) });
+  const pro = require('../services/pro');
+  const stats = pro.isPro(req.user) ? await pro.stats(req.user.user_id, mine.map((l) => l.listing_id)) : null;
+  res.render('myListings', { items: await listings.hydrate(mine), stats });
 });
 
 /* ------------------------------------------------------------ detail */
@@ -287,12 +307,16 @@ router.post('/listings/:id/edit', requireLogin, loadListingForOwner, uploadParse
   if (req.uploadError) errors.images = req.uploadError;
   const staged = await stageImages(req.files);
   if (staged.error) errors.images = staged.error;
-  else if (keep.length + staged.images.length > config.limits.imagesPerListing) {
-    errors.images = `A listing can have at most ${config.limits.imagesPerListing} photos.`;
+  else if (keep.length + staged.images.length > require('../services/pro').photoLimit(req.user)) {
+    errors.images = `A listing can have at most ${require('../services/pro').photoLimit(req.user)} photos. Pro sellers can have ${require('../services/pro').PRO_PHOTOS}.`;
   }
   const locked = ['hidden', 'removed'].includes(listing.status);
   let status = listing.status;
   if (!locked && ['active', 'draft', 'closed'].includes(req.body.status)) status = req.body.status;
+  const bizCat = (cats.find((c) => c.category_id === v.category_id) || {}).slug === 'business';
+  const paidUp = Number(listing.promo_until) > Date.now();
+  let needsPayment = false;
+  if (bizCat && status === 'active' && listing.status !== 'active' && !paidUp) { status = listing.status === 'closed' ? 'closed' : 'draft'; needsPayment = true; }
 
   if (Object.keys(errors).length) {
     return res.status(400).render('listingForm', { l: { ...v, listing_id: listing.listing_id, status: listing.status }, categories: cats, errors, images: existing, isEdit: true });
@@ -317,6 +341,11 @@ router.post('/listings/:id/edit', requireLogin, loadListingForOwner, uploadParse
   await audit({ actor: req.user, action: 'listing.update', entityType: 'listing', entityId: listing.listing_id, ip: req.ip });
   if (status === 'active') await flagIfSuspicious(listing, v);
   if (status === 'active' && !listing.published_at) await require('../services/alerts').onListingLive(listing.listing_id);
+  if (needsPayment) {
+    await listings.update(listing.listing_id, { requires_payment: true, awaiting_payment: true });
+    req.flash('info', 'Saved. Business listings go live once the Business advertisement is paid.');
+    return res.redirect(`/listings/${listing.listing_id}/promote`);
+  }
   req.flash('success', 'Listing updated.');
   res.redirect(`/listings/${listing.listing_id}`);
 });
@@ -343,6 +372,14 @@ router.post('/listings/:id/status', requireLogin, loadListingForOwner, async (re
     return res.redirect('/my/listings');
   }
   const now = Date.now();
+  {
+    const c = (await categories.all()).find((x) => x.category_id === req.listing.category_id);
+    if (next === 'active' && c && c.slug === 'business' && req.listing.requires_payment && !(Number(req.listing.promo_until) > now)) {
+      await listings.update(req.listing.listing_id, { awaiting_payment: true });
+      req.flash('info', 'Business listings go live once the Business advertisement is paid.');
+      return res.redirect(`/listings/${req.listing.listing_id}/promote`);
+    }
+  }
   // "Mark as returned" is only for Lost & Found items: the owner has got the item back (or the finder handed it over).
   const cat = (await categories.all()).find((c) => c.category_id === req.listing.category_id);
   const returned = next === 'closed' && req.body.outcome === 'returned' && Boolean(cat && cat.slug === 'lost-found');

@@ -2416,3 +2416,17 @@ main { padding-top: 22px; }
 .dob legend { font-weight: 600; margin-bottom: 6px; padding: 0; }
 .dob__row { display: grid; grid-template-columns: 0.8fr 1.4fr 1fr; gap: 8px; }
 .dob__row select { width: 100%; min-width: 0; }
+
+/* ===== Paid members ===== */
+.pf-badge--pro { color: #92400e; background: #fef3c7; border-color: #fcd34d; }
+[data-theme="dark"] .pf-badge--pro { color: #fde68a; background: rgba(245, 158, 11, .15); border-color: rgba(245, 158, 11, .45); }
+.promark { display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; margin-left: 4px; background: #f59e0b; color: #fff; flex: none; }
+.promark .icon { width: 10px; height: 10px; }
+.manage__stats { margin: 4px 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; color: var(--ink-2); }
+.manage__stats .icon { width: 14px; height: 14px; }
+.pro-teaser { margin: 6px 0 0; display: flex; align-items: center; gap: 6px; color: var(--ink-2); }
+.pro-teaser .icon { width: 14px; height: 14px; color: #f59e0b; }
+.pro-perks { margin: 16px 0; border-left: 4px solid #f59e0b; }
+.pro-perks h2 { display: flex; align-items: center; gap: 8px; }
+.pay-notice { margin: 0; }
+.apply-card { margin-top: 12px; }

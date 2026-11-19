@@ -43,7 +43,7 @@ async function activeSnapshot() {
   const snap = await L().where('status', '==', 'active').orderBy('published_at', 'desc').limit(SNAPSHOT_LIMIT).get();
   const raw = snap.docs.map((d) => d.data()).filter((l) => !l.deleted_at);
   const ok = await users.visibleOwners(raw.map((l) => l.owner_id));
-  const items = (await hydrate(raw.filter((l) => ok.has(Number(l.owner_id))))).map((l) => ({ ...l, owner_name: users.ownerName(l.owner_id), owner_trust: users.ownerTrust(l.owner_id) }));
+  const items = (await hydrate(raw.filter((l) => ok.has(Number(l.owner_id))))).map((l) => ({ ...l, owner_name: users.ownerName(l.owner_id), owner_trust: users.ownerTrust(l.owner_id), owner_pro: users.ownerPro(l.owner_id) }));
   snapshot = { at: Date.now(), items };
   return items;
 }
