@@ -1,5 +1,12 @@
 # CampusFind on Render — Express backend + static UI.
-# Database: Supabase Postgres (SUPABASE_DB_URL). Auth/Storage: Firebase.
+# Database: Render Postgres (or set SUPABASE_DB_URL to a Supabase URI).
+# Auth/Storage: Firebase.
+databases:
+  - name: campusfind-db
+    plan: free
+    region: oregon
+    postgresMajorVersion: "16"
+
 services:
   - type: web
     name: campusfind
@@ -14,7 +21,17 @@ services:
       - key: NODE_ENV
         value: production
       - key: PHOTO_STORE
-        value: storage
-      # Set these in the Render Dashboard (or Blueprint sync) — do not commit secrets:
-      # SUPABASE_DB_URL, FIREBASE_PROJECT_ID, WEB_API_KEY / FIREBASE_WEB_API_KEY,
+        value: db
+      - key: TRUST_PROXY
+        value: "1"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: campusfind-db
+          property: connectionString
+      - key: SUPABASE_DB_URL
+        fromDatabase:
+          name: campusfind-db
+          property: connectionString
+      # Set these in the Render Dashboard — do not commit secrets:
+      # FIREBASE_PROJECT_ID, WEB_API_KEY / FIREBASE_WEB_API_KEY,
       # FIREBASE_STORAGE_BUCKET, FIREBASE_SERVICE_ACCOUNT, BASE_URL, ADMIN_EMAIL, ADMIN_PASSWORD

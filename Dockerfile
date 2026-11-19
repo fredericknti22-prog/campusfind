@@ -10,6 +10,7 @@ RUN npm ci --omit=dev && npm cache clean --force
 
 COPY src ./src
 COPY public ./public
+COPY supabase ./supabase
 
 # Run as the unprivileged user that ships with the node image
 USER node
