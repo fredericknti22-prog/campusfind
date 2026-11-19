@@ -1,0 +1,50 @@
+{
+  "name": "campusfind",
+  "version": "3.0.0",
+  "description": "CampusFind - campus discovery platform. Hosted on Firebase; application data on Supabase Postgres.",
+  "private": true,
+  "main": "functions.js",
+  "engines": {
+    "node": "22.x"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "emulators": "firebase emulators:start --only auth,storage --project demo-campusfind",
+    "start:emulated": "firebase emulators:exec --only auth,storage --project demo-campusfind \"node scripts/dev-emulated.js\"",
+    "seed:demo": "node scripts/seed-demo.js",
+    "test": "firebase emulators:exec --only auth,storage --project demo-campusfind \"node --test --test-concurrency=1 tests/app.test.js tests/prod.test.js tests/photos-off.test.js tests/photos-firestore.test.js tests/ratelimit.test.js tests/features.test.js tests/payments.test.js tests/saved.test.js tests/business.test.js tests/security.test.js tests/chat.test.js tests/turnstile.test.js\"",
+    "deploy:rules": "firebase deploy --only storage",
+    "deploy:hosting": "firebase deploy --only hosting",
+    "check": "node scripts/check.js",
+    "deploy": "echo Use Render for the web service (render.yaml). Firebase Storage rules: npm run deploy:rules",
+    "deploy:render": "echo Push to GitHub; Render auto-deploys from render.yaml / connected repo",
+    "rehearse": "firebase emulators:exec --only auth,storage,functions,hosting --project demo-campusfind \"node scripts/rehearse.js\"",
+    "build:motion": "esbuild scripts/motion-entry.js --bundle --minify --format=iife --target=es2019 --legal-comments=eof --outfile=public/js/motion.js",
+    "bg:status": "node scripts/bluegreen.js status",
+    "bg:stage": "node scripts/bluegreen.js stage",
+    "bg:promote": "node scripts/bluegreen.js promote",
+    "bg:rollback": "node scripts/bluegreen.js rollback"
+  },
+  "dependencies": {
+    "compression": "^1.8.2",
+    "express": "^5.1.0",
+    "firebase-admin": "^14.5.0",
+    "firebase-functions": "^7.4.0",
+    "multer": "^2.0.2",
+    "pg": "^8.23.1",
+    "qrcode": "1.5.4",
+    "sharp": "^0.35.5",
+    "web-push": "3.6.7"
+  },
+  "overrides": {
+    "jwks-rsa": "3.2.2"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.3.16",
+    "esbuild": "^0.28.2",
+    "firebase-tools": "^14.27.0",
+    "jsdom": "27.4.0",
+    "motion": "^14.10.1"
+  }
+}

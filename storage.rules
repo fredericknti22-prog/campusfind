@@ -1,0 +1,10 @@
+rules_version = '2';
+
+// Photos are written and served by the server only (Admin SDK). The bucket is never public.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

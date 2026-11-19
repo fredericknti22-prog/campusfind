@@ -1,0 +1,6 @@
+{
+  "projects": {
+    "default": "campusfind-baf86",
+    "demo": "demo-campusfind"
+  }
+}

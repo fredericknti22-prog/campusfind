@@ -1,0 +1,17 @@
+tests
+scripts
+.env
+.env.*
+.secret.local
+firebase.json
+.firebaserc
+firestore.rules
+firestore.indexes.json
+storage.rules
+functions.js
+Dockerfile
+.dockerignore
+.replit
+*.log
+brag-output
+.deploy

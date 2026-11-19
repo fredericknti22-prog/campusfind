@@ -1,0 +1,20 @@
+# CampusFind on Render — Express backend + static UI.
+# Database: Supabase Postgres (SUPABASE_DB_URL). Auth/Storage: Firebase.
+services:
+  - type: web
+    name: campusfind
+    runtime: docker
+    plan: free
+    region: oregon
+    healthCheckPath: /healthz
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PHOTO_STORE
+        value: storage
+      # Set these in the Render Dashboard (or Blueprint sync) — do not commit secrets:
+      # SUPABASE_DB_URL, FIREBASE_PROJECT_ID, WEB_API_KEY / FIREBASE_WEB_API_KEY,
+      # FIREBASE_STORAGE_BUCKET, FIREBASE_SERVICE_ACCOUNT, BASE_URL, ADMIN_EMAIL, ADMIN_PASSWORD
