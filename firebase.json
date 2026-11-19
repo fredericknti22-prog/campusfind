@@ -16,8 +16,13 @@
     "cleanUrls": false,
     "redirects": [
       {
-        "source": "**",
-        "destination": "https://campusfind-6h5q.onrender.com/:splat",
+        "source": "/",
+        "destination": "https://campusfind-6h5q.onrender.com/",
+        "type": 302
+      },
+      {
+        "source": "/:path*",
+        "destination": "https://campusfind-6h5q.onrender.com/:path*",
         "type": 302
       }
     ],
