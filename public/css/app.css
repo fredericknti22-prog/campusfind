@@ -2704,3 +2704,141 @@ h2, .section__head h2 { font-size: clamp(1.45rem, 2.4vw, 1.85rem); }
 .lf-quick__link .icon { width: 16px; height: 16px; color: var(--brand); flex: none; }
 .lf-quick__stat { margin: 0; display: inline-flex; align-items: center; gap: 6px; font-size: .85rem; color: var(--ink-2); }
 .lf-quick__stat .icon { width: 15px; height: 15px; color: #10a362; }
+
+/* ==========================================================================
+   Phone-first polish — thumb reach, 44px targets, less chrome, no iOS zoom
+   ========================================================================== */
+@media (max-width: 760px) {
+  :root { --hdr-h: 0px; --phone-pad: 16px; --tabbar-h: 64px; }
+
+  .wrap, .wrap--wide { width: min(1160px, 100% - (var(--phone-pad) * 2)); }
+  .cf-main { padding-top: 10px; padding-bottom: calc(var(--tabbar-h) + 28px + env(safe-area-inset-bottom, 0px)); }
+
+  /* Header: logo + essentials only; search on its own row */
+  .cf-header { position: sticky; top: 0; z-index: 50; padding-top: env(safe-area-inset-top, 0px); }
+  .cf-header__bar {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas:
+      "menu brand actions"
+      "search search search";
+    align-items: center;
+    column-gap: 8px;
+    row-gap: 8px;
+    padding-block: 8px 10px;
+  }
+  .cf-menu-btn { grid-area: menu; }
+  .cf-header .brand { grid-area: brand; justify-self: start; }
+  .cf-actions { grid-area: actions; justify-self: end; gap: 6px; margin-left: 0; }
+  .cf-search { grid-area: search; order: unset; flex: none; width: 100%; max-width: none; min-height: 48px; }
+  .cf-search input[type="search"] { min-height: 48px; font-size: 16px; } /* 16px stops iOS focus zoom */
+  .cf-search__go { display: grid; width: 42px; height: 42px; min-height: 42px; }
+  .cf-topnav { display: none !important; }
+  .cf-actions .btn--ghost { display: none; } /* Sign in lives in the tab bar */
+  .cf-post { display: none; } /* Post lives in the tab bar */
+  .cf-actions .icon-btn,
+  .cf-actions .account-pill,
+  .cf-menu-btn {
+    width: 44px; height: 44px; min-width: 44px; min-height: 44px;
+  }
+
+  /* Hero CTAs stack full-width for thumbs */
+  .cf-hero--promo { margin-top: 8px; border-radius: 18px; }
+  .cf-hero--promo .cf-hero__text { padding: 22px 18px 20px; }
+  .cf-hero--promo h1 { font-size: clamp(1.75rem, 8vw, 2.35rem); }
+  .cf-hero--promo .cf-hero__lead { font-size: .98rem; margin-bottom: 16px; }
+  .cf-hero__ctas {
+    display: grid; grid-template-columns: 1fr; gap: 10px; width: 100%;
+  }
+  .cf-hero__ctas .btn {
+    width: 100%; min-height: 48px; justify-content: center;
+  }
+
+  /* Spot + lost/found shortcuts */
+  .spot--soft { grid-template-columns: 1fr; gap: 10px; margin-top: 14px; }
+  .spot--soft .spot__card {
+    grid-template-columns: auto 1fr; padding: 16px; min-height: 72px;
+  }
+  .lf-quick { display: grid; grid-template-columns: 1fr; gap: 8px; margin: 12px 0; }
+  .lf-quick__link {
+    min-height: 48px; padding: 12px 16px; border-radius: 14px; width: 100%;
+    justify-content: flex-start;
+  }
+  .lf-quick__stat { padding: 4px 2px; }
+
+  /* Category rail: snap + edge fade feel */
+  .cats--rail {
+    margin-inline: calc(var(--phone-pad) * -1);
+    padding-inline: var(--phone-pad);
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    gap: 10px;
+  }
+  .cats--rail > li { scroll-snap-align: start; }
+  .cat--tile { min-width: 76px; padding: 4px; }
+  .cat--tile .cat__icon { width: 68px; height: 68px; border-radius: 18px; }
+
+  /* Listing grid readable on phone */
+  .grid, .grid--results { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 10px; }
+  .listing__body { padding: 10px; }
+  .listing__title { font-size: .88rem; line-height: 1.3; }
+  .section__head { gap: 6px 12px; margin-bottom: 14px; }
+  .section__head h2 { font-size: 1.35rem; }
+  .link-arrow { min-height: 44px; }
+
+  /* Forms / filters / auth */
+  input[type="text"], input[type="email"], input[type="password"], input[type="number"],
+  input[type="search"], input[type="date"], input[type="tel"], input[type="url"],
+  select, textarea {
+    font-size: 16px; min-height: 48px; border-radius: 12px;
+  }
+  textarea { min-height: 120px; }
+  .btn { min-height: 48px; }
+  .btn--sm { min-height: 44px; }
+  .filters__box > summary { min-height: 48px; }
+  .auth { margin: 8px 0; border-radius: 16px; }
+  .page-head h1 { font-size: 1.55rem; }
+
+  /* Bottom tab bar — larger hit areas */
+  .tabbar {
+    display: grid; grid-template-columns: repeat(5, 1fr);
+    min-height: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px));
+    padding: 6px 2px calc(6px + env(safe-area-inset-bottom, 0px));
+    background: color-mix(in srgb, var(--header-bg) 92%, transparent);
+  }
+  .tab {
+    min-height: 52px; gap: 3px; padding: 6px 2px; font-size: .68rem;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .tab__icon { width: 44px; height: 32px; }
+  .tab__icon .icon { width: 26px; height: 26px; }
+  .tab--post {
+    width: 52px; height: 52px; margin: 0 auto; border-radius: 16px;
+    display: grid; place-items: center; align-self: center;
+    box-shadow: 0 6px 16px color-mix(in srgb, var(--accent) 45%, transparent);
+  }
+  .tab--post .tab__label { display: none; }
+  .tab--post .tab__icon { width: auto; height: auto; }
+  .site-footer.cf-footer { padding-bottom: calc(var(--tabbar-h) + 20px + env(safe-area-inset-bottom, 0px)); }
+
+  /* Help FAB sits clear of the tab bar */
+  .aw { right: 12px; bottom: calc(var(--tabbar-h) + 12px + env(safe-area-inset-bottom, 0px)); }
+  .aw-fab { width: 52px; height: 52px; }
+  .aw-panel {
+    left: 8px; right: 8px; width: auto; max-width: none;
+    bottom: calc(var(--tabbar-h) + 8px + env(safe-area-inset-bottom, 0px));
+    max-height: min(70dvh, 560px);
+  }
+
+  /* Menus / toasts */
+  .menu__panel { right: 0; left: auto; max-width: min(320px, calc(100vw - 24px)); }
+  .flashes { width: min(1160px, 100% - 24px); top: calc(8px + env(safe-area-inset-top, 0px)); }
+  .app-nudge { flex-wrap: wrap; }
+}
+
+@media (max-width: 420px) {
+  .grid, .grid--results { grid-template-columns: 1fr; }
+  .listing { display: grid; grid-template-columns: 112px 1fr; align-items: stretch; }
+  .listing__media, .listing__ph { aspect-ratio: 1; min-height: 112px; border-radius: 0; }
+  .listing__body { display: flex; flex-direction: column; justify-content: center; }
+}

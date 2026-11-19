@@ -148,8 +148,8 @@ function header(req, active = '') {
               </div>
             </details>`
           : html`
-            <a class="icon-btn icon-btn--soft" href="/saved" aria-label="Saved listings">${icon('bookmark')}</a>
-            <a class="btn btn--ghost btn--sm" href="/login">Log in</a>
+            <a class="icon-btn icon-btn--soft cf-hide-sm" href="/saved" aria-label="Saved listings">${icon('bookmark')}</a>
+            <a class="btn btn--ghost btn--sm cf-hide-sm" href="/login">Log in</a>
             <a class="btn btn--accent btn--sm cf-post" href="/listings/new">${icon('plus')}<span>Post</span></a>`}
       </div>
     </div>
