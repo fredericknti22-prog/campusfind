@@ -1,10 +1,13 @@
 'use strict';
 /**
- * Firebase Admin SDK bootstrap for Auth and Storage.
- * Application data lives in Supabase Postgres (see src/store.js / src/db.js).
- * With FIREBASE_AUTH_EMULATOR_HOST / FIREBASE_STORAGE_EMULATOR_HOST set, no credentials are needed for those services.
+ * Firebase Admin SDK bootstrap. Everything server-side goes through here:
+ *   Authentication -> credentials, password hashing, reset emails
+ *   Firestore      -> all application data
+ *   Storage        -> listing photos
+ * With FIRESTORE_EMULATOR_HOST / FIREBASE_AUTH_EMULATOR_HOST set (firebase emulators) no credentials are needed.
  */
 const { initializeApp, getApps, getApp, cert, applicationDefault } = require('firebase-admin/app');
+const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const { getAuth } = require('firebase-admin/auth');
 const { getStorage } = require('firebase-admin/storage');
 const config = require('./config');
@@ -23,30 +26,22 @@ if (!fb.emulator) {
 
 const options = { projectId: fb.projectId };
 if (fb.storageBucket) options.storageBucket = fb.storageBucket;
-const onGcp = Boolean(process.env.K_SERVICE || process.env.FUNCTION_TARGET);
-const hasExplicitCreds = Boolean(fb.serviceAccount || process.env.GOOGLE_APPLICATION_CREDENTIALS);
-const adminReady = Boolean(fb.emulator || fb.serviceAccount || hasExplicitCreds || onGcp);
-if (fb.emulator || !adminReady) {
-  // Skip metadata-server probes on emulators and non-GCP hosts (Render).
-  process.env.METADATA_SERVER_DETECTION = process.env.METADATA_SERVER_DETECTION || 'none';
-}
 if (fb.emulator) {
-  // Auth/Storage emulators do not need credentials.
-} else if (fb.serviceAccount) {
-  options.credential = cert(fb.serviceAccount);
-} else if (hasExplicitCreds || onGcp) {
-  options.credential = applicationDefault();
-} else if (config.isProd) {
-  console.warn('[firebase] FIREBASE_SERVICE_ACCOUNT is not set. Using Identity Toolkit REST for sign-up/sign-in; Admin APIs stay off until a service account is configured.');
+  // Emulators need no real credential. Skip the SDK's probe of Google's metadata server (slow, noisy).
+  process.env.METADATA_SERVER_DETECTION = process.env.METADATA_SERVER_DETECTION || 'none';
 } else {
-  options.credential = applicationDefault();
+  // On Cloud Run / Cloud Functions the runtime service account is picked up automatically.
+  options.credential = fb.serviceAccount ? cert(fb.serviceAccount) : applicationDefault();
 }
 
 const app = getApps().length ? getApp() : initializeApp(options);
+const db = getFirestore(app);
+try { db.settings({ ignoreUndefinedProperties: true }); } catch (_) { /* already configured */ }
 
 module.exports = {
   app,
+  db,
   auth: getAuth(app),
   bucket: getStorage(app).bucket(),
-  adminReady,
+  FieldValue,
 };

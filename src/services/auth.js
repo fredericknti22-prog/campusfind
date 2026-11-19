@@ -5,7 +5,7 @@
  * The Firestore users/{id} document holds role, status and profile and links to Auth through `uid`.
  */
 const crypto = require('crypto');
-const { auth, adminReady } = require('../firebase');
+const { auth } = require('../firebase');
 const config = require('../config');
 const users = require('../repo/users');
 const identity = require('./identity');
@@ -20,26 +20,21 @@ class AccountError extends Error {
   constructor(code) { super(code); this.code = code; }
 }
 
-/** Create the Firebase Auth user and the matching profile document. */
+/** Create the Firebase Auth user and the matching Firestore document. */
 async function createAccount({ name, email, password, role = 'student', consent = null }) {
-  let uid;
+  let record;
   try {
-    if (adminReady) {
-      const record = await auth.createUser({ email, password, displayName: name, emailVerified: false });
-      uid = record.uid;
-    } else {
-      uid = (await identity.signUp(email, password, name)).uid;
-    }
+    record = await auth.createUser({ email, password, displayName: name, emailVerified: false });
   } catch (err) {
-    if (err.code === 'auth/email-already-exists' || err.code === 'EMAIL_EXISTS') throw new AccountError('EMAIL_EXISTS');
-    if (err.code === 'auth/invalid-password' || err.code === 'WEAK_PASSWORD') throw new AccountError('WEAK_PASSWORD');
-    if (err.code === 'auth/invalid-email' || err.code === 'INVALID_EMAIL') throw new AccountError('INVALID_EMAIL');
+    if (err.code === 'auth/email-already-exists') throw new AccountError('EMAIL_EXISTS');
+    if (err.code === 'auth/invalid-password') throw new AccountError('WEAK_PASSWORD');
+    if (err.code === 'auth/invalid-email') throw new AccountError('INVALID_EMAIL');
     throw err;
   }
   try {
-    return await users.create({ uid, name, email, role, consent });
+    return await users.create({ uid: record.uid, name, email, role, consent });
   } catch (err) {
-    if (adminReady) await auth.deleteUser(uid).catch(() => {}); // do not leave an orphaned credential behind
+    await auth.deleteUser(record.uid).catch(() => {}); // do not leave an orphaned credential behind
     throw err;
   }
 }
@@ -155,18 +150,8 @@ async function bootstrapSuperAdmin() {
       await audit({ action: 'system.bootstrap_promote', entityType: 'user', entityId: existing.user_id });
       return;
     }
-    let uid = null;
-    if (adminReady) {
-      uid = (await auth.getUserByEmail(email)).uid;
-    } else if (!generated) {
-      // Without Admin SDK we can only recover the uid by signing in with ADMIN_PASSWORD.
-      try { uid = (await identity.signInWithPassword(email, password)).uid; } catch (_) { /* wrong password */ }
-    }
-    if (!uid) {
-      console.warn(`[auth] ${email} exists in Firebase Auth but cannot be linked without FIREBASE_SERVICE_ACCOUNT (or ADMIN_PASSWORD matching that account).`);
-      return;
-    }
-    doc = await users.create({ uid, name: config.bootstrapAdmin.name, email, role: 'superadmin' });
+    const record = await auth.getUserByEmail(email);
+    doc = await users.create({ uid: record.uid, name: config.bootstrapAdmin.name, email, role: 'superadmin' });
     console.log(`Linked existing Firebase Auth user ${email} as super admin (password unchanged).`);
     await audit({ action: 'system.bootstrap_superadmin', entityType: 'user', entityId: doc.user_id });
     return;

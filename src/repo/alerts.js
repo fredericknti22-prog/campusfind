@@ -4,7 +4,8 @@
  * listing goes live for the first time. Private to the member who saved it.
  *   alerts/{auto id}
  */
-const { col, deleteWhere, FieldValue } = require('../store');
+const { col, deleteWhere } = require('../store');
+const { FieldValue } = require('../firebase');
 
 const A = () => col('alerts');
 const MAX_ALERTS = 10;

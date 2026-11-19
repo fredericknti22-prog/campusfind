@@ -32,10 +32,8 @@ module.exports = {
   campusName: env.CAMPUS_NAME || 'your campus',
   // Photos need Firebase Storage. Set PHOTOS_ENABLED=false to run without it.
   photosEnabled: env.PHOTOS_ENABLED !== 'false',
-  // Where photos are kept: "storage" (Firebase Storage, needs the Blaze plan) or "firestore"/"db" (Supabase/Postgres document store, re-encoded to WebP).
-  photoStore: (env.PHOTO_STORE === 'firestore' || env.PHOTO_STORE === 'db') ? 'firestore' : 'storage',
-  // Supabase Postgres URI (Settings → Database → Connection string → URI). Also accepted as DATABASE_URL.
-  databaseUrl: (env.SUPABASE_DB_URL || env.DATABASE_URL || '').trim(),
+  // Where photos are kept: "storage" (Firebase Storage, needs the Blaze plan) or "firestore" (free Spark plan, photos are re-encoded to WebP).
+  photoStore: env.PHOTO_STORE === 'firestore' ? 'firestore' : 'storage',
   baseUrl: (env.BASE_URL || `http://localhost:${port}`).replace(/\/$/, ''),
   // Blue/green (scripts/bluegreen.js): which colour this build is. A production build reached on any host other than
   // BASE_URL's is a staged candidate and shows a "Test environment" banner.

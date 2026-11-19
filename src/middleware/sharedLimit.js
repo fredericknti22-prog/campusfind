@@ -11,11 +11,12 @@
  *  - The cheap in-memory check runs first, so most abusive traffic is refused without touching the database.
  *  - Only the endpoints listed in the routes use this. Counting every request would burn through the free write quota.
  *  - Keys are stored as SHA-256 hashes, so no IP address or email is written to the database.
- *  - If the shared store is unavailable the request is allowed on the in-memory limit alone, so an outage never locks everyone out.
+ *  - If Firestore is unavailable the request is allowed on the in-memory limit alone, so an outage never locks everyone out.
  *  - Fixed windows: a client can burst up to twice the limit across a window boundary. That is acceptable for these limits.
  */
 const { rateLimit, sha256 } = require('../lib/security');
-const { db, col, deleteWhere } = require('../store');
+const { db } = require('../firebase');
+const { col, deleteWhere } = require('../store');
 
 const RATE = () => col('rate_limits');
 

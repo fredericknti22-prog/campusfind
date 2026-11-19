@@ -86,7 +86,7 @@ test('photos in Firestore: upload is re-encoded to WebP, served, cached, and del
 
   const stored = (await col('photos').doc(filename).get()).data();
   assert.ok(stored.size <= 900_000, `fits a document store row (${stored.size} bytes)`);
-  assert.ok(stored.data_b64, 'photo bytes kept as base64 in Supabase');
+  assert.ok(stored.data, 'photo bytes kept in Firestore');
 
   const img = await new Client().get(`/uploads/${filename}`);
   assert.equal(img.status, 200);

@@ -2,19 +2,19 @@
 /**
  * Listing photos. Two interchangeable stores, chosen with PHOTO_STORE:
  *   storage   (default) Firebase Storage bucket uploads/ (needs the Blaze plan). Files are kept as uploaded.
- *   firestore / db      Supabase Postgres collection photos/{filename} (base64 in cf_docs). Every photo is
- *                       re-encoded to WebP (max 1600 px, under ~900 KB), which also strips EXIF/GPS.
+ *   firestore           Firestore collection photos/{filename}. Works on the free Spark plan. Every photo is
+ *                       re-encoded to WebP (max 1600 px, under ~900 KB) so it fits a document, and re-encoding
+ *                       also removes EXIF data such as the GPS position of the phone that took it.
  * Either way the store is private and photos are served through the app at /uploads/:file.
  */
 const crypto = require('crypto');
-const { bucket } = require('../firebase');
-const { col } = require('../store');
+const { bucket, db } = require('../firebase');
 const config = require('../config');
 
 const NAME_RE = /^[a-f0-9]{32}\.(jpg|png|webp)$/;
 const MIME = { jpg: 'image/jpeg', png: 'image/png', webp: 'image/webp' };
-const MAX_DOC_BYTES = 900_000;
-const PHOTOS = () => col('photos');
+const MAX_DOC_BYTES = 900_000; // Firestore documents are limited to 1 MiB
+const PHOTOS = () => db.collection('photos');
 const inFirestore = () => config.photoStore === 'firestore';
 
 /** Identify the real image type by magic bytes, never by the client-supplied name or MIME type. */
@@ -55,10 +55,7 @@ async function prepare({ ext, buffer }) {
 async function save(buffer, ext) {
   const filename = `${crypto.randomBytes(16).toString('hex')}.${ext}`;
   if (inFirestore()) {
-    await PHOTOS().doc(filename).set({
-      data_b64: Buffer.from(buffer).toString('base64'),
-      content_type: MIME[ext], size: buffer.length, created_at: Date.now(),
-    });
+    await PHOTOS().doc(filename).set({ data: buffer, content_type: MIME[ext], size: buffer.length, created_at: Date.now() });
     return filename;
   }
   await bucket.file(`uploads/${filename}`).save(buffer, {
@@ -91,7 +88,7 @@ async function serve(req, res, next) {
     const snap = await PHOTOS().doc(name).get();
     if (!snap.exists) return missing();
     const d = snap.data();
-    const bytes = Buffer.from(d.data_b64 || '', 'base64');
+    const bytes = Buffer.from(d.data.toUint8Array ? d.data.toUint8Array() : d.data);
     res.set({ ...SAFE_HEADERS, 'Content-Type': d.content_type || type, 'Content-Length': bytes.length, 'Cache-Control': cache });
     return res.end(bytes);
   }
@@ -107,9 +104,10 @@ async function stats() {
   if (!config.photosEnabled) return { files: 0, bytes: 0, capped: false };
   try {
     if (inFirestore()) {
-      const snap = await PHOTOS().get();
-      const bytes = snap.docs.reduce((n, d) => n + Number((d.data().size) || 0), 0);
-      return { files: snap.size, bytes, capped: false };
+      const { AggregateField } = require('firebase-admin/firestore');
+      const r = await PHOTOS().aggregate({ n: AggregateField.count(), bytes: AggregateField.sum('size') }).get();
+      const d = r.data();
+      return { files: d.n || 0, bytes: d.bytes || 0, capped: false };
     }
     const [files] = await bucket.getFiles({ prefix: 'uploads/', maxResults: 1000 });
     return { files: files.length, bytes: files.reduce((n, f) => n + Number(f.metadata.size || 0), 0), capped: files.length >= 1000 };

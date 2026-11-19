@@ -1,4 +1,4 @@
-# CampusFind production image (Render, Cloud Run, or any container host)
+# CampusFind production image (Cloud Run or any container host)
 FROM node:22-slim
 
 ENV NODE_ENV=production
@@ -10,7 +10,6 @@ RUN npm ci --omit=dev && npm cache clean --force
 
 COPY src ./src
 COPY public ./public
-COPY supabase ./supabase
 
 # Run as the unprivileged user that ships with the node image
 USER node

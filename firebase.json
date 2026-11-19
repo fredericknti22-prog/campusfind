@@ -14,18 +14,6 @@
       "**/node_modules/**"
     ],
     "cleanUrls": false,
-    "redirects": [
-      {
-        "source": "/",
-        "destination": "https://campusfind-6h5q.onrender.com/",
-        "type": 302
-      },
-      {
-        "source": "/:path*",
-        "destination": "https://campusfind-6h5q.onrender.com/:path*",
-        "type": 302
-      }
-    ],
     "rewrites": [],
     "headers": [
       {
@@ -77,11 +65,27 @@
           }
         ]
       }
+    ],
+    "redirects": [
+      {
+        "source": "/",
+        "destination": "https://campusfind-ruby.vercel.app/",
+        "type": 302
+      },
+      {
+        "source": "/:path*",
+        "destination": "https://campusfind-ruby.vercel.app/:path*",
+        "type": 302
+      }
     ]
   },
   "emulators": {
     "auth": {
       "port": 9099,
+      "host": "127.0.0.1"
+    },
+    "firestore": {
+      "port": 8080,
       "host": "127.0.0.1"
     },
     "storage": {

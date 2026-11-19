@@ -4,16 +4,15 @@
  *
  * Deploys the whole Express app as one HTTPS function ("app"). Firebase Hosting sits in front of it
  * (see firebase.json): static files come from the CDN and every other request is rewritten to this
- * function. Application data is in Supabase Postgres (SUPABASE_DB_URL). Auth + Storage stay on Firebase.
+ * function. Data, Auth and Storage are all on Firebase.
  *
  * Required secrets (firebase functions:secrets:set NAME):
- *   SUPABASE_DB_URL, WEB_API_KEY
+ *   WEB_API_KEY
  * Optional: FIREBASE_STORAGE_BUCKET, ADMIN_EMAIL, ADMIN_PASSWORD, BASE_URL, …
  */
 const { onRequest } = require('firebase-functions/v2/https');
 const { defineSecret } = require('firebase-functions/params');
 
-const supabaseDbUrl = defineSecret('SUPABASE_DB_URL');
 const webApiKey = defineSecret('WEB_API_KEY');
 
 let app = null;
@@ -39,7 +38,7 @@ exports.app = onRequest(
     concurrency: 40,
     maxInstances: 5,
     invoker: 'public',
-    secrets: [supabaseDbUrl, webApiKey],
+    secrets: [webApiKey],
   },
   async (req, res) => {
     try {
