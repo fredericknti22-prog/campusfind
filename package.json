@@ -23,7 +23,8 @@
     "bg:status": "node scripts/bluegreen.js status",
     "bg:stage": "node scripts/bluegreen.js stage",
     "bg:promote": "node scripts/bluegreen.js promote",
-    "bg:rollback": "node scripts/bluegreen.js rollback"
+    "bg:rollback": "node scripts/bluegreen.js rollback",
+    "start:sandbox": "firebase emulators:exec --only auth,firestore,storage --project demo-campusfind \"node scripts/dev-emulated.js\""
   },
   "dependencies": {
     "compression": "^1.8.2",

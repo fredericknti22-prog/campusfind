@@ -3000,3 +3000,7 @@ h2, .section__head h2 { font-size: clamp(1.45rem, 2.4vw, 1.85rem); }
   .cf-actions { grid-area: actions; }
   .cf-search { grid-area: search; }
 }
+
+/* ===== Sandbox banner ===== */
+.env-banner--sandbox { background: #7c2d12; color: #fff; }
+.env-banner--sandbox a { color: #fde68a; }

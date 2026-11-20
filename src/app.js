@@ -19,6 +19,7 @@ function createApp() {
   app.use(securityHeaders);
   // Vercel is the only CampusFind site. Any old Render copy forwards visitors there (path and query kept).
   app.use((req, res, next) => {
+    if (config.sandbox) { res.setHeader('X-Robots-Tag', 'noindex, nofollow'); return next(); } // the Render sandbox stays put
     if (/\.onrender\.com$/i.test(req.hostname || '')) return res.redirect(301, 'https://campusfind-ruby.vercel.app' + req.originalUrl);
     next();
   });

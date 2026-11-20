@@ -10,7 +10,7 @@ const PRIVATE = ['/admin', '/login', '/register', '/forgot', '/reset', '/profile
   '/offline.html', '/orders', '/messages', '/assistant', '/saved', '/alerts', '/listings/new'];
 
 function robots(req) {
-  if (isCandidate(req)) return 'User-agent: *\nDisallow: /\n';
+  if (isCandidate(req) || config.sandbox) return 'User-agent: *\nDisallow: /\n';
   return ['User-agent: *', ...PRIVATE.map((p) => `Disallow: ${p}`), 'Allow: /', '', `Sitemap: ${config.baseUrl}/sitemap.xml`, ''].join('\n');
 }
 

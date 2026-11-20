@@ -20,6 +20,9 @@ process.on('unhandledRejection', (reason) => console.error('[unhandledRejection]
 process.on('uncaughtException', (err) => { console.error('[uncaughtException]', err); process.exit(1); });
 
 async function main() {
+  if (config.sandbox && !config.firebase.emulator) {
+    throw new Error('CAMPUSFIND_SANDBOX=1 must run against the Firebase emulators (npm run start:sandbox). Refusing to start against a real Firebase project.');
+  }
   checkProductionConfig();
   require('./firebase');
   const { init } = require('./bootstrap');

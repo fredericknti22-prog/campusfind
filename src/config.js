@@ -42,7 +42,9 @@ module.exports = {
   allowedEmailDomains: list(env.ALLOWED_EMAIL_DOMAINS),
   publicBrowsing: env.PUBLIC_BROWSING !== 'false',
   // Staff must use an authenticator app to open the admin area. On by default in production; STAFF_2FA=off disables it.
-  security: { staff2fa: env.STAFF_2FA ? !['off', 'false', '0'].includes(env.STAFF_2FA.toLowerCase()) : isProd },
+  // Sandbox (Render test copy): runs only against the Firebase emulators with demo data. See Dockerfile.sandbox.
+  sandbox: env.CAMPUSFIND_SANDBOX === '1',
+  security: { staff2fa: env.STAFF_2FA ? !['off', 'false', '0'].includes(env.STAFF_2FA.toLowerCase()) : isProd && env.CAMPUSFIND_SANDBOX !== '1' },
   trustProxy: env.TRUST_PROXY ? Number(env.TRUST_PROXY) : isProd ? 1 : 0,
   firebase: {
     projectId,

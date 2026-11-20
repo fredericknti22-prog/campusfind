@@ -1753,3 +1753,33 @@ test('Vercel only: requests that reach an old onrender.com copy are forwarded to
   const normal = await fetch(base + '/healthz', { redirect: 'manual' });
   assert.equal(normal.status, 200, 'every other host is served as usual');
 });
+
+test('sandbox (Render test copy): stays on its own address, says it is test data, is never indexed, and refuses to run on real Firebase', async () => {
+  const config = require('../src/config');
+  const get = (p, host) => new Promise((resolve, reject) => {
+    const u = new URL(base);
+    require('http').get({ host: u.hostname, port: u.port, path: p, headers: { host } }, (res) => {
+      let body = ''; res.on('data', (d) => { body += d; }); res.on('end', () => resolve({ status: res.statusCode, headers: res.headers, body }));
+    }).on('error', reject);
+  });
+  config.sandbox = true;
+  try {
+    const home = await get('/', 'campusfind-sandbox.onrender.com');
+    assert.equal(home.status, 200, 'the sandbox is not forwarded to the main site');
+    assert.match(home.body, /Sandbox: test data only/);
+    assert.match(home.body, /<meta name="robots" content="noindex, nofollow">/);
+    assert.equal(home.headers['x-robots-tag'], 'noindex, nofollow');
+    assert.match((await get('/robots.txt', 'campusfind-sandbox.onrender.com')).body, /Disallow: \/\n/);
+  } finally {
+    config.sandbox = false;
+  }
+  assert.doesNotMatch((await new Client().get('/')).text, /Sandbox: test data only/, 'the real site has no sandbox banner');
+
+  // Started with CAMPUSFIND_SANDBOX=1 but without the emulators, the server must refuse to start.
+  const { spawnSync } = require('child_process');
+  const env = { ...process.env, CAMPUSFIND_SANDBOX: '1', NODE_ENV: 'production', PORT: '0' };
+  delete env.FIRESTORE_EMULATOR_HOST; delete env.FIREBASE_AUTH_EMULATOR_HOST; delete env.FIREBASE_STORAGE_EMULATOR_HOST;
+  const r = spawnSync(process.execPath, [require('path').join(__dirname, '..', 'src', 'server.js')], { env, encoding: 'utf8', timeout: 20000 });
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr + r.stdout, /Refusing to start against a real Firebase project/);
+});

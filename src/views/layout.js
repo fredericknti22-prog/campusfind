@@ -245,13 +245,14 @@ function page(req, { title, body, active = '', description = '', bare = false, w
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="CampusFind">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  ${isCandidate(req) ? raw('<meta name="robots" content="noindex, nofollow">') : ''}
+  ${isCandidate(req) || config.sandbox ? raw('<meta name="robots" content="noindex, nofollow">') : ''}
   <link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="${asset('/css/app.css')}">
   <script src="${asset('/js/theme.js')}"></script>
 </head>
 <body class="cf${wide ? ' cf--wide' : ''}${bare ? ' cf--bare' : ' has-panel'}">
   <a class="skip" href="#main">Skip to content</a>
+  ${config.sandbox ? html`<div class="env-banner env-banner--sandbox" data-env="sandbox" role="note">${icon('alert')}<span><strong>Sandbox: test data only.</strong> Nothing here is real and it resets when the server restarts. <a href="https://campusfind-ruby.vercel.app">Go to CampusFind</a></span></div>` : ''}
   ${isCandidate(req) ? html`<div class="env-banner" data-env="candidate" role="note">${icon('alert')}<span><strong>Test environment${config.deployColor ? ` (${config.deployColor})` : ''}</strong> · this build is not the live site yet. <a href="https://${liveHost()}">Go to the live site</a></span></div>` : ''}
   ${bare ? '' : sidePanel(req, active)}
   ${bare ? '' : header(req, active)}
