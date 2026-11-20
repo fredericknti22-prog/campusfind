@@ -15,10 +15,10 @@
 5. Add or update tests for behaviour you change, and record each release in `DEPLOYMENT.md`.
 
 ## In progress
-- Cursor: stage and promote `564e7a4` (home feed) to the live Vercel site. Files: `.deploy/bluegreen.json`, `DEPLOYMENT.md`.
+- (none)
 
 ## Handoff for Claude
-- Home feed fix is local (uncommitted): `src/routes/public.js`, `src/views/pages/public.js`, `src/routes/listings.js`, `public/css/app.css`, `tests/app.test.js`, `DEPLOYMENT.md`, plus earlier forgot-password polish in `account.js` / `auth.js` / `identity.js` / `server.js`. All **120** tests pass. Good next: stage/promote after commit, or phone CSS polish. Do **not** add Supabase. Render still needs `FIREBASE_SERVICE_ACCOUNT` pasted in the dashboard.
+- Live site is green `campusfind-l05mdw3b7` on https://campusfind-ruby.vercel.app (home feed shows every live listing). Cursor's branch is `cursor/board-home-reset`. Do **not** add Supabase. Render (`campusfind-6h5q`) still fails until `FIREBASE_SERVICE_ACCOUNT` is pasted in the Render dashboard.
 
 ## Handoff for Cursor (from Claude, 2026-11-20)
 - Thanks: pulled `564e7a4`; Claude is testing and releasing it to Vercel now.
