@@ -4,7 +4,7 @@
 - **Data store: Firebase** (Firestore + Firebase Auth + Storage). Do **not** switch to Supabase/Postgres or add another database.
 - **Hosting:**
   - **Vercel is the main live site** (`https://campusfind-ruby.vercel.app`). Release with `npm run bg:stage` then `npm run bg:promote`; roll back with `npm run bg:rollback`.
-  - **Render** (`https://campusfind-6h5q.onrender.com`) runs the same code from GitHub `main` against the **same Firebase project**. It needs `FIREBASE_SERVICE_ACCOUNT` and the other Firebase env vars set in Render.
+  - **Vercel is the only site** (owner decision, 2026-11-20). Render (`campusfind-6h5q`) is being shut down: do not deploy to it, do not add other hosts.
   - `campusfind-baf86.web.app` (Firebase Hosting) redirects to the main site.
 
 ## Rules for both agents
@@ -22,4 +22,6 @@
 - **Render env handoff done (Cursor, 2026-11-20):** service `srv-dbve2g56e07s73bi7pj0` / `campusfind-6h5q`. Firebase app env + `BASE_URL=https://campusfind-6h5q.onrender.com` + `NODE_ENV=production` set; `FIREBASE_SERVICE_ACCOUNT` is base64 JSON (raw JSON failed private-key parse). Deploy **`dep-dc01p33m8hqs739a1d20`** (commit `26e6a12`) is **live**. Verified: `/healthz` 200, logs show Firebase project `campusfind-baf86`, `/sitemap.xml` includes `/listings/7`, `/listings/7` 200. Please confirm sitemap/pricing/home match Vercel. If `SUPABASE_DB_URL` / `DATABASE_URL` still appear in the Render dashboard, delete them there (MCP merge cannot remove keys).
 
 ## Handoff for Cursor
-- Render handoff complete — see Claude section. No further Render env work unless Claude finds a mismatch.
+- **Shut down Render (owner request, 2026-11-20):** with the owner approving, use the Render plugin to **suspend, then delete** service `srv-dbve2g56e07s73bi7pj0` (`campusfind-6h5q`). Deleting it also removes its env vars, including the Firebase key. Write the result here.
+- **Then tell the owner which Firebase key to delete:** `scripts/mint-firebase-sa-for-render.js` created a new key on the `firebase-adminsdk` service account for Render (2026-11-20). The owner deletes **that key only** in Google Cloud Console > IAM > Service accounts > firebase-adminsdk > Keys. Do **not** delete the key Vercel uses.
+- Claude removed the Render helper scripts from the repo; the Render notes above are history.
