@@ -292,8 +292,9 @@ test('lost & found: mark as returned closes the item, tells people who asked, an
   const notes = await notifications.list(askerRow.user_id);
   assert.ok(notes.some((n) => /was returned/.test(n.title)), 'people who asked are told');
 
-  // Counted on the home page
-  assert.match((await new Client().get('/')).text, /<strong>1<\/strong> item has been returned to their owners/);
+  // Counted on home rail and the lost & found board
+  assert.match((await new Client().get('/')).text, /1 returned/);
+  assert.match((await new Client().get('/lost-found')).text, /<strong data-count="1">1<\/strong><span>returned to their owners<\/span>/);
 
   // The outcome only applies to Lost & Found
   const other = await post(owner, { title: 'Desk for sale', category_id: String(textbooks.category_id) });

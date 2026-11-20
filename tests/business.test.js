@@ -126,8 +126,9 @@ test('header: Business and Lost & found are first-class links and the first cate
   const chips = [...catNav.matchAll(/href="([^"]+)" class="sp-link tone-\d/g)].map((m) => m[1]);
   assert.equal(chips[0], '/business');
   assert.equal(chips[1], '/lost-found');
-  assert.match(text, /class="spot__card spot--business/);
-  assert.match(text, /class="spot__card spot--lf/);
+  assert.match(text, /class="catstrip"/, 'sticky category strip on home');
+  assert.match(text, /class="rail-card"[^>]*href="\/business"/);
+  assert.match(text, /class="rail-card"[^>]*href="\/lost-found"/);
 });
 
 test('business page lists Business listings, and the active nav item is marked', async () => {

@@ -8,20 +8,6 @@ const { formatMoney: money } = require('../../lib/validate');
 const { TYPES: BUSINESS_TYPES } = require('../../lib/businessTypes');
 
 /* ---------------------------------------------------------------- home */
-/**
- * Flowing lines behind the hero (adapted from the 21st.dev "Background Paths" component). Plain SVG; the motion is a CSS
- * stroke animation, switched off for people who prefer reduced motion.
- */
-function heroPaths() {
-  const paths = [];
-  for (let i = 0; i < 14; i++) {
-    const o = i * 9;
-    const d = `M${-380 + o} ${-189 - o * 1.4}C${-380 + o} ${-189 - o * 1.4} ${-312 + o} ${216 - o * 1.2} ${152 + o} ${343 - o}C${616 + o} ${470 - o} ${684 + o} ${875 - o} ${684 + o} ${875 - o}`;
-    paths.push(`<path class="hp hp${i % 7}" d="${d}" stroke-width="${(0.6 + i * 0.05).toFixed(2)}"/>`);
-  }
-  return raw(`<svg class="hero-paths" viewBox="-300 -200 1100 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false"><g fill="none" stroke="currentColor">${paths.join('')}</g></svg>`);
-}
-
 function home(req, d) {
   const u = req.user;
   const first = u ? u.name.split(' ')[0] : '';
@@ -38,74 +24,64 @@ function home(req, d) {
 
   return page(req, {
     active: 'home',
+    wide: true,
     canonical: '/',
     jsonLd: require('../seo').siteLd(),
     body: html`
-      <section class="cf-hero cf-hero--promo" aria-labelledby="h-hero">
-        ${heroPaths()}
-        <div class="cf-hero__text">
-          <p class="eyebrow">Campus deals</p>
-          <h1 id="h-hero">${u ? html`Welcome back, ${first}.` : html`Buy, sell and find on campus`}</h1>
-          <p class="cf-hero__lead">${u
-            ? 'Browse what is new, answer your messages, or post something of your own.'
-            : html`Textbooks, rooms, tutors, jobs, events and lost property from ${campus}.`}</p>
-          <div class="row row--wrap cf-hero__ctas">
-            <a class="btn btn--accent" href="/browse">Shop now</a>
-            <a class="btn btn--ghost-on-dark" href="${u ? '/listings/new' : '/register'}">${u ? 'Post a listing' : 'Join free'}</a>
-          </div>
+      <section class="mast" aria-labelledby="h-hero">
+        <div class="mast__copy">
+          <p class="mast__brand">CampusFind</p>
+          <h1 id="h-hero">${u ? html`Welcome back, ${first}` : html`Looking for something on ${campus}?`}</h1>
+          <p class="mast__lead">${u
+            ? 'New posts, messages and your own listings — all in one place.'
+            : 'Textbooks, rooms, tutors, jobs, events and lost property. Moderated for students.'}</p>
         </div>
-        <div class="cf-hero__aside" aria-hidden="true">
-          <div class="cf-hero__panel">
-            <p class="cf-hero__panel-kicker">Find a</p>
-            <p class="cf-hero__rotate"><span class="rotator" data-rotate="room near campus|second-hand textbook|tutor for your exams|hostel bed for next semester|lost student ID"><span class="rotator__word">room near campus</span></span></p>
-            <p class="cf-hero__panel-meta">${icon('check')} <span data-count="${d.total}">${d.total}</span> live ${d.total === 1 ? 'listing' : 'listings'}</p>
-          </div>
+        <form class="mast__search" action="/browse" method="get" role="search">
+          <label class="sr-only" for="mast-q">Search all listings</label>
+          ${icon('search')}
+          <input id="mast-q" type="search" name="q" placeholder="Try “chemistry textbook” or “hostel near campus”" maxlength="80" autocomplete="off">
+          <button class="btn btn--accent" type="submit">Search</button>
+        </form>
+        <div class="mast__meta">
+          <span>${icon('check')} <strong data-count="${d.total}">${d.total}</strong> live ${d.total === 1 ? 'listing' : 'listings'}</span>
+          <a href="/browse">Browse all</a>
+          <a href="${u ? '/listings/new' : '/register'}">${u ? 'Post a listing' : 'Create an account'}</a>
         </div>
       </section>
 
-      <section class="spot spot--soft" aria-labelledby="h-spot">
-        <h2 id="h-spot" class="sr-only">Business directory and lost and found</h2>
-        <a class="spot__card spot--business" href="/business">
-          <span class="spot__icon">${icon('store')}</span>
-          <span class="spot__text"><strong>Business directory</strong>
-            <small>Hostels, food vendors, shops and services.${nBiz ? ` ${nBiz} listed.` : ''}</small></span>
-          <span class="spot__go">Explore ${icon('arrow')}</span>
-        </a>
-        <a class="spot__card spot--lf" href="/lost-found">
-          <span class="spot__icon">${icon('compass')}</span>
-          <span class="spot__text"><strong>Lost &amp; found</strong>
-            <small>${nLost ? `${nLost} waiting to be claimed.` : 'Lost it or found it? Start here.'}${d.reunited ? ` ${d.reunited} returned.` : ''}</small></span>
-          <span class="spot__go">Open board ${icon('arrow')}</span>
-        </a>
-      </section>
+      <div class="home-board">
+        <div class="home-board__main">
+          ${section('h-feat', 'Featured', d.featured, ['/pricing', 'Promote yours'])}
+          <section class="section" aria-labelledby="h-new">
+            <div class="section__head"><h2 id="h-new">Latest on campus</h2><a class="link-arrow" href="/browse?sort=newest">See all ${icon('arrow')}</a></div>
+            ${d.latest.length
+              ? grid(d.latest)
+              : html`<div class="empty">${icon('inbox', 'icon--xl')}<h2>No listings published</h2><p>Listings will appear here once members publish them.</p><a class="btn btn--primary" href="${u ? '/listings/new' : '/register'}">Publish a listing</a></div>`}
+          </section>
+          ${section('h-biz', 'Local businesses', d.business, ['/business', 'Directory'])}
+          ${section('h-lost', 'Lost and found', d.lostFound, ['/lost-found', 'Open board'])}
+        </div>
 
-      <section class="lf-quick" aria-label="Lost and found shortcuts">
-        <a class="lf-quick__link" href="/listings/new?category=lost-found&amp;kind=lost">${icon('search')}<span><strong>Lost something?</strong> Report it and add a photo</span></a>
-        <a class="lf-quick__link" href="/listings/new?category=lost-found&amp;kind=found">${icon('compass')}<span><strong>Found something?</strong> Post a photo and where you left it</span></a>
-        ${d.reunited ? html`<p class="lf-quick__stat">${icon('check')} <span><strong>${d.reunited}</strong> ${d.reunited === 1 ? 'item has' : 'items have'} been returned to their owners through CampusFind.</span></p>` : ''}
-      </section>
-
-      <section class="section" aria-labelledby="h-cats">
-        <div class="section__head"><h2 id="h-cats">Shop by category</h2><a class="link-arrow" href="/browse">See all</a></div>
-        <ul class="cats cats--rail">
-          ${(d.categories || []).map((c) => {
-            const href = c.slug === 'business' ? '/business' : c.slug === 'lost-found' ? '/lost-found' : `/browse?category=${c.slug}`;
-            return html`<li><a class="cat cat--tile" href="${href}"><span class="cat__icon">${icon(c.icon || 'tag')}</span>
-              <span class="cat__name">${c.name}</span></a></li>`;
-          })}
-        </ul>
-      </section>
-
-      ${section('h-feat', 'Featured listings', d.featured, ['/pricing', 'See all'])}
-      ${section('h-biz', 'Local businesses', d.business, ['/business', 'See all'])}
-      ${section('h-lost', 'Lost and found', d.lostFound, ['/lost-found', 'See all'])}
-
-      <section class="section" aria-labelledby="h-new">
-        <div class="section__head"><h2 id="h-new">Latest listings</h2><a class="link-arrow" href="/browse?sort=newest">See all</a></div>
-        ${d.latest.length
-          ? grid(d.latest)
-          : html`<div class="empty">${icon('inbox', 'icon--xl')}<h2>No listings published</h2><p>Listings will appear here once members publish them.</p><a class="btn btn--primary" href="${u ? '/listings/new' : '/register'}">Publish a listing</a></div>`}
-      </section>`,
+        <aside class="home-board__rail" aria-label="Shortcuts">
+          <a class="rail-card" href="/business">
+            <span class="rail-card__ico">${icon('store')}</span>
+            <span class="rail-card__body"><strong>Business directory</strong><small>Hostels, food, shops${nBiz ? ` · ${nBiz} listed` : ''}</small></span>
+          </a>
+          <a class="rail-card" href="/lost-found">
+            <span class="rail-card__ico">${icon('compass')}</span>
+            <span class="rail-card__body"><strong>Lost &amp; found</strong><small>${nLost ? `${nLost} waiting` : 'Report lost or found items'}${d.reunited ? ` · ${d.reunited} returned` : ''}</small></span>
+          </a>
+          <div class="rail-card rail-card--stack">
+            <strong>Quick report</strong>
+            <a href="/listings/new?category=lost-found&amp;kind=lost">${icon('search')} Lost something? Report it and add a photo</a>
+            <a href="/listings/new?category=lost-found&amp;kind=found">${icon('compass')} Found something? Post a photo and where you left it</a>
+          </div>
+          <a class="rail-card rail-card--cta" href="${u ? '/listings/new' : '/register'}">
+            <span class="rail-card__body"><strong>${u ? 'Post a listing' : 'Join CampusFind'}</strong><small>${u ? 'Reach students on your campus' : 'Free to browse and post'}</small></span>
+            <span class="rail-card__go">${icon('arrow')}</span>
+          </a>
+        </aside>
+      </div>`,
   });
 }
 /* -------------------------------------------------------------- browse */

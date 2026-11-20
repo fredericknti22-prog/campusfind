@@ -92,7 +92,7 @@ test('health, pages and security headers', async () => {
   assert.equal((await c.get('/healthz')).status, 200);
   const home = await c.get('/');
   assert.equal(home.status, 200);
-  assert.match(home.text, /Buy, sell and find on campus/);
+  assert.match(home.text, /Looking for something on/);
   assert.match(home.headers.get('content-security-policy'), /script-src 'self'/);
   assert.doesNotMatch(home.text, /<script>[^<]/, 'no inline scripts allowed by CSP');
   assert.equal(home.headers.get('x-content-type-options'), 'nosniff');
@@ -698,14 +698,15 @@ test('offline page is self-contained and CSP-clean', async () => {
 
 test('home: hero, header search and categories, listing cards, call-to-action buttons and lost & found shortcuts', async () => {
   const visitor = await new Client().get('/');
-  assert.match(visitor.text, /class="cf-hero[ "]/, 'a hero with the welcome message');
-  assert.match(visitor.text, /<nav class="sp-group sp-cats" aria-label="Categories">/, 'categories in the side panel');
+  assert.match(visitor.text, /class="mast"/, 'search-led masthead');
+  assert.match(visitor.text, /class="home-board"/, 'feed + rail board layout');
+  assert.match(visitor.text, /class="catstrip"/, 'sticky category strip');
   assert.match(visitor.text, /class="grid"/, 'listings are shown as a card grid');
   assert.match(visitor.text, /class="listing tone-/, 'each listing is a card');
-  assert.match(visitor.text, /Buy, sell and find on campus/);
+  assert.match(visitor.text, /Looking for something on/);
   assert.match(visitor.text, /action="\/browse"[^>]*role="search"/);
-  assert.match(visitor.text, /Browse listings/);
-  assert.match(visitor.text, /Join free/);
+  assert.match(visitor.text, /Browse all/);
+  assert.match(visitor.text, /Create an account/);
   assert.match(visitor.text, /Report it and add a photo/);
   assert.match(visitor.text, /Post a photo and where you left it/);
   assert.match(visitor.text, /href="\/listings\/new\?category=lost-found&amp;kind=lost"/);
@@ -717,7 +718,7 @@ test('home: hero, header search and categories, listing cards, call-to-action bu
   assert.match(memberHome.text, /Welcome back,/);
   assert.match(memberHome.text, /My account/);
   assert.match(memberHome.text, /Welcome back, /, 'signed-in members are greeted by name');
-  assert.doesNotMatch(memberHome.text, /Join free/, 'the sign-up button is for visitors only');
+  assert.doesNotMatch(memberHome.text, /Create an account/, 'the sign-up button is for visitors only');
   assert.match(memberHome.text, /class="btn btn--accent btn--sm cf-post" href="\/listings\/new"/, 'the Post button is always in the header');
 });
 

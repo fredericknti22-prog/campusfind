@@ -86,22 +86,31 @@ function sidePanel(req, active) {
   <div class="sp-scrim" data-panel-close hidden></div>`;
 }
 
-/** Header: logo, search and the main actions only. Navigation lives in the side panel. */
-function topNav(req, active) {
-  const link = (key, href, label) => html`<a class="tn-link${active === key ? ' is-active' : ''}" href="${href}"${active === key ? raw(' aria-current="page"') : ''}>${label}</a>`;
-  const cats = (req.navCats || []).filter((c) => !['business', 'lost-found'].includes(c.slug));
-  return html`<nav class="cf-topnav" aria-label="Main">
-    ${link('browse', '/browse', 'Browse')}
-    ${cats.length ? html`<details class="menu tn-menu"><summary class="tn-link">Categories ${icon('caret', 'tn-caret')}</summary>
-      <div class="menu__panel tn-panel">${cats.map((c) => html`<a href="/browse?category=${c.slug}"><span class="tn-cat tone-${c.tone ?? 0}">${icon(c.icon || 'tag')}</span>${c.name}</a>`)}
-        <a class="tn-all" href="/browse">${icon('list')} All listings</a></div></details>` : ''}
-    ${link('business', '/business', 'Business')}
-    ${link('lostfound', '/lost-found', 'Lost & found')}
-    ${link('pricing', '/pricing', 'Pricing')}
-    ${link('help', '/help', 'Help')}
-  </nav>`;
+/** Sticky category strip under the header — the main way to move around on desktop and phone. */
+function categoryStrip(req) {
+  if (String(req.path || '').startsWith('/admin')) return '';
+  const PINNED = ['business', 'lost-found'];
+  const navCats = req.navCats || [];
+  const cats = [...PINNED.map((s) => navCats.find((c) => c.slug === s)).filter(Boolean), ...navCats.filter((c) => !PINNED.includes(c.slug))];
+  const pageFor = { business: '/business', 'lost-found': '/lost-found' };
+  const onBrowse = req.path === '/browse';
+  const curCat = onBrowse ? String((req.query && req.query.category) || '') : '';
+  const chip = (href, here, label, ic) => html`<a class="catstrip__chip${here ? ' is-active' : ''}" href="${href}"${here ? raw(' aria-current="page"') : ''}>${icon(ic)}<span>${label}</span></a>`;
+  return html`<div class="catstrip" aria-label="Browse by category">
+    <div class="catstrip__inner wrap">
+      ${chip('/browse', onBrowse && !curCat, 'All', 'list')}
+      ${cats.map((c) => {
+        const href = pageFor[c.slug] || `/browse?category=${c.slug}`;
+        const here = pageFor[c.slug] ? req.path === href : onBrowse && curCat === c.slug;
+        return chip(href, here, c.name, c.icon || 'tag');
+      })}
+      ${chip('/pricing', req.path === '/pricing', 'Pricing', 'tag')}
+      ${chip('/help', req.path === '/help', 'Help', 'shield')}
+    </div>
+  </div>`;
 }
 
+/** Header: brand, search, account actions. Categories live in the strip below. */
 function header(req, active = '') {
   const u = req.user;
   const unread = u ? req.unread || 0 : 0;
@@ -111,12 +120,11 @@ function header(req, active = '') {
     <div class="cf-header__bar wrap">
       <button class="icon-btn cf-menu-btn" type="button" data-panel-open aria-controls="side-panel" aria-expanded="false" aria-label="Open the menu">${icon('menu')}</button>
       <a class="brand" href="/" aria-label="CampusFind home">${brandLogo()}</a>
-      ${topNav(req, active)}
 
       <form class="cf-search" action="/browse" method="get" role="search">
         <label class="sr-only" for="hdr-q">Search listings</label>
         ${icon('search')}
-        <input id="hdr-q" type="search" name="q" placeholder="Search textbooks, rooms, tutors…" maxlength="80" autocomplete="off">
+        <input id="hdr-q" type="search" name="q" placeholder="Search campus listings…" maxlength="80" autocomplete="off" value="${(req.query && req.query.q) || ''}">
         <button class="cf-search__go" type="submit" aria-label="Search">${icon('search')}</button>
       </form>
 
@@ -247,6 +255,7 @@ function page(req, { title, body, active = '', description = '', bare = false, w
   ${isCandidate(req) ? html`<div class="env-banner" data-env="candidate" role="note">${icon('alert')}<span><strong>Test environment${config.deployColor ? ` (${config.deployColor})` : ''}</strong> · this build is not the live site yet. <a href="https://${liveHost()}">Go to the live site</a></span></div>` : ''}
   ${bare ? '' : sidePanel(req, active)}
   ${bare ? '' : header(req, active)}
+  ${bare ? '' : categoryStrip(req)}
   ${bare || !settings.get('announcement') ? '' : html`<div class="announce" role="note">${icon('bell')} <span>${settings.get('announcement')}</span></div>`}
   ${bare ? '' : whatsNewBanner(req)}
   ${bare || !req.user || req.path === '/app' || String(req.path || '').startsWith('/admin') ? '' : html`<aside class="app-nudge wrap" data-app-nudge hidden aria-label="Get the app">${icon('bell')}<span>Get a buzz when someone replies or makes an offer.</span><a class="btn btn--primary btn--sm" href="/app">Get the app</a><button class="icon-btn app-nudge__x" type="button" data-app-nudge-x aria-label="Not now">${icon('x')}</button></aside>`}
