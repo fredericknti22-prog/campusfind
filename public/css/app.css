@@ -235,6 +235,7 @@ code { background: var(--paper-2); padding: 1px 6px; border-radius: 4px; font-si
 .section { margin-top: 40px; }
 .section__head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
 .section__head h2 { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 1.2rem; }
+.section__lead { margin: -6px 0 16px; max-width: 52ch; font-size: .95rem; }
 .link-arrow { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: .92rem; text-decoration: none; }
 .link-arrow:hover { text-decoration: underline; }
 .link-arrow .icon { width: 16px; height: 16px; }

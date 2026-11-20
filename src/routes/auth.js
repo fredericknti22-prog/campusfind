@@ -118,12 +118,15 @@ router.post('/register', registerLimiter, async (req, res) => {
   res.redirect('/');
 });
 
-/* ----- password recovery (Firebase sends the email) ----- */
-router.get('/forgot', (req, res) => res.render('forgot', {}));
+/* ----- password recovery (Firebase Auth emails the reset link) ----- */
+router.get('/forgot', (req, res) => res.render('forgot', { email: clean(req.query.email || '').toLowerCase() }));
 
 router.post('/forgot', forgotLimiter, async (req, res) => {
-  if (!(await turnstile.verify(req, 'forgot')).ok) { req.flash('error', turnstile.MESSAGE); return res.redirect('/forgot'); }
   const email = clean(req.body.email).toLowerCase();
+  if (!(await turnstile.verify(req, 'forgot')).ok) {
+    req.flash('error', turnstile.MESSAGE);
+    return res.redirect(email ? `/forgot?email=${encodeURIComponent(email)}` : '/forgot');
+  }
   const user = await users.getByEmail(email);
   if (user && !user.deleted_at && user.status !== 'banned') {
     try {
@@ -134,7 +137,7 @@ router.post('/forgot', forgotLimiter, async (req, res) => {
     }
   }
   // Same response either way: never reveal whether an email is registered.
-  res.render('forgot', { sent: true });
+  res.render('forgot', { sent: true, email });
 });
 
 async function checkResetCode(code) {

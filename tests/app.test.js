@@ -369,18 +369,29 @@ test('login: lockout, generic errors, open-redirect defence', async () => {
 });
 
 test('password recovery through Firebase Auth reset email', async () => {
+  const email = `reset.${Date.now()}@campus.test`;
+  const member = await signup('Reset Member', email);
+  member.jar.clear();
+
   const c = new Client();
   const unknown = await c.post('/forgot', { email: 'nobody@campus.test' }, '/forgot');
   assert.equal(unknown.status, 200);
-  assert.match(unknown.text, /reset link is on its way/, 'same message for unknown emails');
+  assert.match(unknown.text, /Firebase has emailed a reset link/, 'same message for unknown emails');
 
-  const sent = await c.post('/forgot', { email: 'lock@campus.test' }, '/forgot');
-  assert.match(sent.text, /reset link is on its way/);
+  const sent = await c.post('/forgot', { email }, '/forgot');
+  assert.match(sent.text, /Firebase has emailed a reset link/);
   assert.match(sent.text, /Resend reset link/);
+  assert.match(sent.text, new RegExp(`name="email" value="${email.replace(/\./g, '\\.')}"`));
   const host = process.env.FIREBASE_AUTH_EMULATOR_HOST;
   const codes = (await (await fetch(`http://${host}/emulator/v1/projects/${process.env.GCLOUD_PROJECT}/oobCodes`)).json()).oobCodes;
-  const mine = codes.filter((x) => x.email === 'lock@campus.test' && x.requestType === 'PASSWORD_RESET').pop();
+  const mine = codes.filter((x) => x.email === email && x.requestType === 'PASSWORD_RESET').pop();
   assert.ok(mine, 'Firebase generated a reset email');
+  const before = codes.filter((x) => x.email === email && x.requestType === 'PASSWORD_RESET').length;
+  const resent = await c.post('/forgot', { email }, '/forgot');
+  assert.match(resent.text, /Resend reset link/);
+  const afterCodes = (await (await fetch(`http://${host}/emulator/v1/projects/${process.env.GCLOUD_PROJECT}/oobCodes`)).json()).oobCodes;
+  const after = afterCodes.filter((x) => x.email === email && x.requestType === 'PASSWORD_RESET').length;
+  assert.ok(after > before, 'resend asks Firebase for another reset email');
 
   const form = await c.get(`/reset?oobCode=${encodeURIComponent(mine.oobCode)}`);
   assert.equal(form.status, 200);
@@ -392,9 +403,9 @@ test('password recovery through Firebase Auth reset email', async () => {
   const NEW = 'Fresh-Passphrase-4455';
   const done = await c.post('/reset', { oobCode: mine.oobCode, password: NEW }, `/reset?oobCode=${encodeURIComponent(mine.oobCode)}`);
   assert.equal(done.status, 302);
-  assert.match((await new Client().post('/login', { email: 'lock@campus.test', password: STRONG })).text, /Incorrect email or password/, 'old password no longer works');
-  const login = await new Client().post('/login', { email: 'lock@campus.test', password: NEW });
-  assert.equal(login.status, 302, 'new password works and the earlier lockout was cleared');
+  assert.match((await new Client().post('/login', { email, password: STRONG })).text, /Incorrect email or password/, 'old password no longer works');
+  const login = await new Client().post('/login', { email, password: NEW });
+  assert.equal(login.status, 302, 'new password works');
   const reuse = await c.post('/reset', { oobCode: mine.oobCode, password: 'Another-Passphrase-99' }, '/forgot');
   assert.equal(reuse.status, 400, 'reset link is single use');
 });
@@ -704,6 +715,8 @@ test('home: hero, header search and categories, listing cards, call-to-action bu
   assert.match(visitor.text, /class="catstrip"/, 'sticky category strip');
   assert.match(visitor.text, /class="grid"/, 'listings are shown as a card grid');
   assert.match(visitor.text, /class="listing tone-/, 'each listing is a card');
+  assert.match(visitor.text, /Latest on campus/);
+  assert.match(visitor.text, /no sign-in needed to browse/i);
   assert.match(visitor.text, /Looking for something on/);
   assert.match(visitor.text, /action="\/browse"[^>]*role="search"/);
   assert.match(visitor.text, /Browse all/);
@@ -721,6 +734,21 @@ test('home: hero, header search and categories, listing cards, call-to-action bu
   assert.match(memberHome.text, /Welcome back, /, 'signed-in members are greeted by name');
   assert.doesNotMatch(memberHome.text, /Create an account/, 'the sign-up button is for visitors only');
   assert.match(memberHome.text, /class="btn btn--accent btn--sm cf-post" href="\/listings\/new"/, 'the Post button is always in the header');
+});
+
+test('published listings appear on the home page for signed-out visitors', async () => {
+  const erin = new Client();
+  assert.equal((await erin.post('/login', { email: 'erin@campus.test', password: state.erinPw })).status, 302);
+  const title = `Campus noticeboard post ${Date.now()}`;
+  const path = await publish(erin, { title, category_id: '1', price_type: 'fixed', price: '12' });
+  const id = idFrom(path);
+  assert.equal((await listingsRepo.get(id)).status, 'active');
+  const home = await new Client().get('/');
+  assert.match(home.text, new RegExp(title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), 'visitor sees the new post on home');
+  assert.match(home.text, new RegExp(`href="/listings/${id}"`));
+  const detail = await new Client().get(`/listings/${id}`);
+  assert.equal(detail.status, 200);
+  assert.match(detail.text, new RegExp(title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
 });
 
 test('"Report a lost / found item" shortcuts preselect the category and pre-fill the title', async () => {

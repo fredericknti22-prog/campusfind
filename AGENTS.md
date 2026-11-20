@@ -15,4 +15,7 @@
 5. Add or update tests for behaviour you change, and record each release in `DEPLOYMENT.md`.
 
 ## In progress
-- Cursor: Render env setup (`scripts/push-env-to-render.js`); Firebase credentials go in Render with the owner present, never in git or chat.
+- (none)
+
+## Handoff for Claude
+- Home feed fix is local (uncommitted): `src/routes/public.js`, `src/views/pages/public.js`, `src/routes/listings.js`, `public/css/app.css`, `tests/app.test.js`, `DEPLOYMENT.md`, plus earlier forgot-password polish in `account.js` / `auth.js` / `identity.js` / `server.js`. All **120** tests pass. Good next: stage/promote after commit, or phone CSS polish. Do **not** add Supabase. Render still needs `FIREBASE_SERVICE_ACCOUNT` pasted in the dashboard.

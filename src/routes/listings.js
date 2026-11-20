@@ -236,7 +236,9 @@ router.post('/listings/new', requireLogin, requireActive, createLimiter, uploadP
     req.flash('info', 'Almost done. Business listings go live once the Business advertisement is paid. Choose a plan below.');
     return res.redirect(`/listings/${listing.listing_id}/promote`);
   }
-  req.flash('success', publish ? 'Your listing has been published.' : 'Draft saved.');
+  req.flash('success', publish
+    ? 'Your listing is live. It shows on the home page and Browse for everyone.'
+    : 'Draft saved. Publish it when you are ready for everyone to see it.');
   res.redirect(`/listings/${listing.listing_id}`);
 });
 

@@ -11,13 +11,14 @@ router.get('/', async (req, res) => {
   const [all, cats] = await Promise.all([listings.activeSnapshot(), categories.active()]);
   const hidden = new Set(require('../services/blocks').list(req.user));
   const items = hidden.size ? all.filter((l) => !hidden.has(Number(l.owner_id))) : all;
+  // Newest live listings first — every public post appears here for visitors and members.
+  // Featured / business / lost-found are highlight strips; they are not removed from the main feed.
   const featured = items.filter(isFeaturedNow).slice(0, 4);
   const business = items.filter((l) => promoTierNow(l) === 'business' && !isFeaturedNow(l)).slice(0, 4);
   const lostFound = items.filter((l) => l.cat_slug === 'lost-found').slice(0, 4);
-  const shown = new Set([...featured, ...business].map((l) => l.listing_id));
   const data = {
     categories: cats, featured, business, lostFound,
-    latest: items.filter((l) => !shown.has(l.listing_id)).slice(0, 12),
+    latest: items.slice(0, 24),
     total: items.length,
     counts: items.reduce((m, l) => { m[l.cat_slug] = (m[l.cat_slug] || 0) + 1; return m; }, {}),
     reunited: await listings.countReturned(),

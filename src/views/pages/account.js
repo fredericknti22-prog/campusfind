@@ -88,20 +88,26 @@ function register(req, { values = {}, errors = {} } = {}) {
   });
 }
 
-function forgot(req, { sent = false } = {}) {
+function forgot(req, { sent = false, email = '' } = {}) {
   return authShell(req, {
     title: 'Reset password',
     heading: 'Reset your password',
-    sub: sent ? 'If that email has an account, a reset link is on its way. It expires in 30 minutes.' : 'Enter your email and we will send a reset link.',
+    sub: sent
+      ? 'If that email has an account, Firebase has emailed a reset link. It expires in 30 minutes.'
+      : 'Enter your email and Firebase Authentication will send a reset link.',
     aside: { h: 'Account recovery', points: ['Reset links expire after 30 minutes', 'Each link can be used once', 'We do not disclose whether an email is registered'] },
     form: sent
       ? html`<div class="stack">
           <a class="btn btn--primary btn--block" href="/login">Back to sign in</a>
-          <p class="small center muted">Nothing yet? Check spam, wait a minute, then request another link.</p>
-          <a class="btn btn--ghost btn--block" href="/forgot">Resend reset link</a>
+          <p class="small center muted">Nothing yet? Check spam, wait a minute, then resend.</p>
+          <form method="post" action="/forgot" class="stack">${csrf(req)}
+            <input type="hidden" name="email" value="${email}">
+            ${turnstileWidget('forgot')}
+            <button class="btn btn--ghost btn--block" type="submit">Resend reset link</button>
+          </form>
         </div>`
       : html`<form method="post" action="/forgot" class="stack">${csrf(req)}
-          ${field({ name: 'email', label: 'Email', type: 'email', required: true, autocomplete: 'email' })}
+          ${field({ name: 'email', label: 'Email', type: 'email', required: true, autocomplete: 'email', value: email })}
           ${turnstileWidget('forgot')}
           <button class="btn btn--primary btn--block" type="submit">Send reset link</button>
           <p class="small center"><a href="/login">Back to sign in</a></p></form>`,

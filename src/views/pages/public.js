@@ -51,13 +51,14 @@ function home(req, d) {
 
       <div class="home-board">
         <div class="home-board__main">
-          ${section('h-feat', 'Featured', d.featured, ['/pricing', 'Promote yours'])}
           <section class="section" aria-labelledby="h-new">
             <div class="section__head"><h2 id="h-new">Latest on campus</h2><a class="link-arrow" href="/browse?sort=newest">See all ${icon('arrow')}</a></div>
+            <p class="section__lead muted">Every live listing shows here for everyone — no sign-in needed to browse.</p>
             ${d.latest.length
               ? grid(d.latest)
               : html`<div class="empty">${icon('inbox', 'icon--xl')}<h2>No listings published</h2><p>Listings will appear here once members publish them.</p><a class="btn btn--primary" href="${u ? '/listings/new' : '/register'}">Publish a listing</a></div>`}
           </section>
+          ${section('h-feat', 'Featured', d.featured, ['/pricing', 'Promote yours'])}
           ${section('h-biz', 'Local businesses', d.business, ['/business', 'Directory'])}
           ${section('h-lost', 'Lost and found', d.lostFound, ['/lost-found', 'Open board'])}
         </div>

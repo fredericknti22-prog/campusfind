@@ -3,7 +3,8 @@
  * Firebase Authentication password flows via the Identity Toolkit REST API.
  * (The Admin SDK can create users and verify tokens but cannot check a password, so sign-in,
  *  reset emails and reset confirmation use these endpoints with the project's Web API key.)
- * Firebase stores and hashes credentials and sends the password-reset email itself.
+ * Forgotten-password and resend: Firebase Auth stores the credential and emails the reset link
+ * (set the console action URL to <BASE_URL>/reset). No second auth provider (e.g. Supabase).
  */
 const config = require('../config');
 
@@ -42,12 +43,15 @@ async function signInWithPassword(email, password) {
 }
 
 /** Firebase emails the member a reset link that opens <BASE_URL>/reset (also set the console action URL to match). */
-const sendPasswordReset = (email) => call('accounts:sendOobCode', {
-  requestType: 'PASSWORD_RESET',
-  email,
-  continueUrl: `${config.baseUrl}/reset`,
-  canHandleCodeInApp: false,
-});
+function sendPasswordReset(email) {
+  const body = { requestType: 'PASSWORD_RESET', email };
+  // continueUrl needs an authorized domain; skip on the Auth emulator.
+  if (!config.firebase.emulator) {
+    body.continueUrl = `${config.baseUrl}/reset`;
+    body.canHandleCodeInApp = false;
+  }
+  return call('accounts:sendOobCode', body);
+}
 
 /** Check an oobCode from the reset link. Resolves { email }. */
 async function verifyResetCode(oobCode) {
@@ -64,12 +68,14 @@ async function signInWithCustomToken(token) {
 }
 
 /** Firebase emails the member a link to confirm their address (lands on <BASE_URL>/reset?mode=verifyEmail). */
-const sendVerifyEmail = (idToken) => call('accounts:sendOobCode', {
-  requestType: 'VERIFY_EMAIL',
-  idToken,
-  continueUrl: `${config.baseUrl}/reset`,
-  canHandleCodeInApp: false,
-});
+function sendVerifyEmail(idToken) {
+  const body = { requestType: 'VERIFY_EMAIL', idToken };
+  if (!config.firebase.emulator) {
+    body.continueUrl = `${config.baseUrl}/reset`;
+    body.canHandleCodeInApp = false;
+  }
+  return call('accounts:sendOobCode', body);
+}
 
 /** Apply the code from a verification link. Resolves { email }. */
 async function applyVerifyCode(oobCode) {
