@@ -21,7 +21,13 @@ Add variables in Vercel: Project `campusfind` > Settings > Environment Variables
 - [ ] **You** Set the live super-admin password: open `/forgot` on the live site with the admin email
       and follow the reset email.
 - [ ] **You** In Firebase console > Authentication > Templates > Password reset, set the action URL to
-      `https://campusfind-ruby.vercel.app/reset`.
+      `https://campusfind-ruby.vercel.app/reset` (same host as `BASE_URL`). Add that host under
+      Authentication > Settings > Authorized domains. The app also passes `continueUrl` to Firebase when
+      sending reset and verify emails.
+- [ ] **You** If Render (`campusfind-6h5q`) is used: set `FIREBASE_SERVICE_ACCOUNT` there (Firebase Console >
+      Project settings > Service accounts > Generate new private key; paste JSON or base64). Vercel
+      Sensitive env vars cannot be pulled after save — generate a fresh key for Render if needed. Also set
+      `FIREBASE_PROJECT_ID`, `FIREBASE_WEB_API_KEY`, `BASE_URL`, `PHOTO_STORE`, `ADMIN_EMAIL`.
 - [ ] **You** Remove the ~8 `@campus.test` accounts left over from testing
       (Firebase console > Authentication > Users; also delete their listings in Firestore if any).
 

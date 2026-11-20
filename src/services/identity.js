@@ -41,8 +41,13 @@ async function signInWithPassword(email, password) {
   return { uid: r.localId };
 }
 
-/** Firebase emails the member a reset link (action URL is set in the console to <BASE_URL>/reset). */
-const sendPasswordReset = (email) => call('accounts:sendOobCode', { requestType: 'PASSWORD_RESET', email });
+/** Firebase emails the member a reset link that opens <BASE_URL>/reset (also set the console action URL to match). */
+const sendPasswordReset = (email) => call('accounts:sendOobCode', {
+  requestType: 'PASSWORD_RESET',
+  email,
+  continueUrl: `${config.baseUrl}/reset`,
+  canHandleCodeInApp: false,
+});
 
 /** Check an oobCode from the reset link. Resolves { email }. */
 async function verifyResetCode(oobCode) {
@@ -58,8 +63,13 @@ async function signInWithCustomToken(token) {
   return { idToken: r.idToken };
 }
 
-/** Firebase emails the member a link to confirm their address. */
-const sendVerifyEmail = (idToken) => call('accounts:sendOobCode', { requestType: 'VERIFY_EMAIL', idToken });
+/** Firebase emails the member a link to confirm their address (lands on <BASE_URL>/reset?mode=verifyEmail). */
+const sendVerifyEmail = (idToken) => call('accounts:sendOobCode', {
+  requestType: 'VERIFY_EMAIL',
+  idToken,
+  continueUrl: `${config.baseUrl}/reset`,
+  canHandleCodeInApp: false,
+});
 
 /** Apply the code from a verification link. Resolves { email }. */
 async function applyVerifyCode(oobCode) {

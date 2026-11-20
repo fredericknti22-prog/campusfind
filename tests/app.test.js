@@ -376,6 +376,7 @@ test('password recovery through Firebase Auth reset email', async () => {
 
   const sent = await c.post('/forgot', { email: 'lock@campus.test' }, '/forgot');
   assert.match(sent.text, /reset link is on its way/);
+  assert.match(sent.text, /Resend reset link/);
   const host = process.env.FIREBASE_AUTH_EMULATOR_HOST;
   const codes = (await (await fetch(`http://${host}/emulator/v1/projects/${process.env.GCLOUD_PROJECT}/oobCodes`)).json()).oobCodes;
   const mine = codes.filter((x) => x.email === 'lock@campus.test' && x.requestType === 'PASSWORD_RESET').pop();

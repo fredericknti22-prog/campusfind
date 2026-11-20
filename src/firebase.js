@@ -29,9 +29,15 @@ if (fb.storageBucket) options.storageBucket = fb.storageBucket;
 if (fb.emulator) {
   // Emulators need no real credential. Skip the SDK's probe of Google's metadata server (slow, noisy).
   process.env.METADATA_SERVER_DETECTION = process.env.METADATA_SERVER_DETECTION || 'none';
+} else if (fb.serviceAccount) {
+  options.credential = cert(fb.serviceAccount);
+} else if (process.env.GOOGLE_APPLICATION_CREDENTIALS || process.env.K_SERVICE || process.env.FUNCTION_TARGET) {
+  // Cloud Run / Cloud Functions: the runtime service account is picked up automatically.
+  options.credential = applicationDefault();
 } else {
-  // On Cloud Run / Cloud Functions the runtime service account is picked up automatically.
-  options.credential = fb.serviceAccount ? cert(fb.serviceAccount) : applicationDefault();
+  throw new Error(
+    'FIREBASE_SERVICE_ACCOUNT is not set. On Render/Vercel/Docker hosts, paste the Firebase service-account JSON (or base64) into that env var. On Cloud Run you can leave it empty and use the runtime service account.'
+  );
 }
 
 const app = getApps().length ? getApp() : initializeApp(options);

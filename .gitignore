@@ -17,3 +17,9 @@ ui-debug.log
 .vercel
 brag-output/
 .deploy/
+
+.env.render.tmp
+render-env-payload.json
+scripts/inspect-env-tmp.js
+render-env-payload.json
+.env.render*

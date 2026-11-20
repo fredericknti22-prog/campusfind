@@ -95,7 +95,11 @@ function forgot(req, { sent = false } = {}) {
     sub: sent ? 'If that email has an account, a reset link is on its way. It expires in 30 minutes.' : 'Enter your email and we will send a reset link.',
     aside: { h: 'Account recovery', points: ['Reset links expire after 30 minutes', 'Each link can be used once', 'We do not disclose whether an email is registered'] },
     form: sent
-      ? html`<a class="btn btn--primary btn--block" href="/login">Back to sign in</a>`
+      ? html`<div class="stack">
+          <a class="btn btn--primary btn--block" href="/login">Back to sign in</a>
+          <p class="small center muted">Nothing yet? Check spam, wait a minute, then request another link.</p>
+          <a class="btn btn--ghost btn--block" href="/forgot">Resend reset link</a>
+        </div>`
       : html`<form method="post" action="/forgot" class="stack">${csrf(req)}
           ${field({ name: 'email', label: 'Email', type: 'email', required: true, autocomplete: 'email' })}
           ${turnstileWidget('forgot')}

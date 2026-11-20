@@ -7,6 +7,9 @@ function checkProductionConfig() {
   const problems = [];
   const needsBucket = config.photosEnabled && config.photoStore === 'storage';
   if (needsBucket && !process.env.FIREBASE_STORAGE_BUCKET) problems.push('FIREBASE_STORAGE_BUCKET is not set (find it in Firebase console > Storage).');
+  if (!config.firebase.serviceAccount && !process.env.GOOGLE_APPLICATION_CREDENTIALS && !process.env.K_SERVICE && !process.env.FUNCTION_TARGET) {
+    problems.push('FIREBASE_SERVICE_ACCOUNT is not set (required on Render/Vercel/Docker; Cloud Run can use the runtime service account instead).');
+  }
   if (problems.length) throw new Error(problems.join(' '));
   if (!/^https:\/\//.test(config.baseUrl)) console.warn(`[config] BASE_URL is "${config.baseUrl}". Set it to your public https:// address.`);
   if (config.firebase.serviceAccount) console.warn('[config] Using FIREBASE_SERVICE_ACCOUNT. On Cloud Run prefer the runtime service account and leave it unset.');
