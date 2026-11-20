@@ -17,6 +17,11 @@ function createApp() {
   app.disable('x-powered-by');
   app.set('trust proxy', config.trustProxy);
   app.use(securityHeaders);
+  // Vercel is the only CampusFind site. Any old Render copy forwards visitors there (path and query kept).
+  app.use((req, res, next) => {
+    if (/\.onrender\.com$/i.test(req.hostname || '')) return res.redirect(301, 'https://campusfind-ruby.vercel.app' + req.originalUrl);
+    next();
+  });
   app.use(compression());
   app.use(restoreMultipartBody); // photo uploads under Cloud Functions (no effect elsewhere)
 

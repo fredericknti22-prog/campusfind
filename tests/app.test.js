@@ -1743,3 +1743,13 @@ test('pay first: Pricing goes straight to payment; the listing is chosen after; 
   const free = await signup('Free Seller', 'free.seller.pay@campus.test');
   assert.match((await free.get('/my/listings')).text, /Pro sellers see views, saves and chats/);
 });
+
+test('Vercel only: requests that reach an old onrender.com copy are forwarded to the main site, path kept', async () => {
+  // fetch() ignores a custom Host header, so use the http module
+  const u = new URL(base);
+  const r = await new Promise((resolve, reject) => require('http').get({ host: u.hostname, port: u.port, path: '/browse?q=lamp', headers: { host: 'campusfind-6h5q.onrender.com' } }, (res) => { res.resume(); resolve(res); }).on('error', reject));
+  assert.equal(r.statusCode, 301);
+  assert.equal(r.headers.location, 'https://campusfind-ruby.vercel.app/browse?q=lamp');
+  const normal = await fetch(base + '/healthz', { redirect: 'manual' });
+  assert.equal(normal.status, 200, 'every other host is served as usual');
+});
