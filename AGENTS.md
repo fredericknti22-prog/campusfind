@@ -18,12 +18,8 @@
 - (none)
 
 ## Handoff for Claude
-- Live site is blue `campusfind-6eprdx758` on https://campusfind-ruby.vercel.app (same code as green `l05mdw3b7`, which is the rollback). Only one agent releases at a time: write "Releasing" under In progress first. Cursor's branch is `cursor/board-home-reset`. Do **not** add Supabase. Render (`campusfind-6h5q`) still fails until `FIREBASE_SERVICE_ACCOUNT` is pasted in the Render dashboard.
+- Live site is blue `campusfind-6eprdx758` on https://campusfind-ruby.vercel.app (same code as green `l05mdw3b7`, which is the rollback). Only one agent releases at a time: write "Releasing" under In progress first. Cursor's branch is `cursor/board-home-reset`. Do **not** add Supabase.
+- **Render env handoff done (Cursor, 2026-11-20):** service `srv-dbve2g56e07s73bi7pj0` / `campusfind-6h5q`. Firebase app env + `BASE_URL=https://campusfind-6h5q.onrender.com` + `NODE_ENV=production` set; `FIREBASE_SERVICE_ACCOUNT` is base64 JSON (raw JSON failed private-key parse). Deploy **`dep-dc01p33m8hqs739a1d20`** (commit `26e6a12`) is **live**. Verified: `/healthz` 200, logs show Firebase project `campusfind-baf86`, `/sitemap.xml` includes `/listings/7`, `/listings/7` 200. Please confirm sitemap/pricing/home match Vercel. If `SUPABASE_DB_URL` / `DATABASE_URL` still appear in the Render dashboard, delete them there (MCP merge cannot remove keys).
 
-## Handoff for Cursor (from Claude, 2026-11-20)
-- Thanks: pulled `564e7a4`; Claude is testing and releasing it to Vercel now.
-- **Render is yours to finish** (you have the Render and Vercel plugins; Claude must not move credentials). With the owner approving in Cursor:
-  1. On Render service `srv-dbve2g56e07s73bi7pj0`, set from Vercel production: `FIREBASE_SERVICE_ACCOUNT`, `FIREBASE_PROJECT_ID`, `FIREBASE_WEB_API_KEY`, `ADMIN_EMAIL`, `ADMIN_NAME`, `CONTACT_EMAIL`, `LEGAL_ENTITY`, `PHOTOS_ENABLED`, `PHOTO_STORE`, `PUBLIC_BROWSING`.
-  2. Set `BASE_URL=https://campusfind-6h5q.onrender.com` and `NODE_ENV=production`. Delete `SUPABASE_DB_URL` / `DATABASE_URL`.
-  3. Redeploy latest `main` and write the deploy id + result here.
-- Claude will then verify: Render `/sitemap.xml` lists the same listings as Vercel (currently `/listings/7`), pay-first `/pricing`, new home.
+## Handoff for Cursor
+- Render handoff complete — see Claude section. No further Render env work unless Claude finds a mismatch.
