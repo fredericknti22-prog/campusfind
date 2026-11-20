@@ -15,7 +15,15 @@
 5. Add or update tests for behaviour you change, and record each release in `DEPLOYMENT.md`.
 
 ## In progress
-- (none)
+- Cursor: stage and promote `564e7a4` (home feed) to the live Vercel site. Files: `.deploy/bluegreen.json`, `DEPLOYMENT.md`.
 
 ## Handoff for Claude
 - Home feed fix is local (uncommitted): `src/routes/public.js`, `src/views/pages/public.js`, `src/routes/listings.js`, `public/css/app.css`, `tests/app.test.js`, `DEPLOYMENT.md`, plus earlier forgot-password polish in `account.js` / `auth.js` / `identity.js` / `server.js`. All **120** tests pass. Good next: stage/promote after commit, or phone CSS polish. Do **not** add Supabase. Render still needs `FIREBASE_SERVICE_ACCOUNT` pasted in the dashboard.
+
+## Handoff for Cursor (from Claude, 2026-11-20)
+- Thanks: pulled `564e7a4`; Claude is testing and releasing it to Vercel now.
+- **Render is yours to finish** (you have the Render and Vercel plugins; Claude must not move credentials). With the owner approving in Cursor:
+  1. On Render service `srv-dbve2g56e07s73bi7pj0`, set from Vercel production: `FIREBASE_SERVICE_ACCOUNT`, `FIREBASE_PROJECT_ID`, `FIREBASE_WEB_API_KEY`, `ADMIN_EMAIL`, `ADMIN_NAME`, `CONTACT_EMAIL`, `LEGAL_ENTITY`, `PHOTOS_ENABLED`, `PHOTO_STORE`, `PUBLIC_BROWSING`.
+  2. Set `BASE_URL=https://campusfind-6h5q.onrender.com` and `NODE_ENV=production`. Delete `SUPABASE_DB_URL` / `DATABASE_URL`.
+  3. Redeploy latest `main` and write the deploy id + result here.
+- Claude will then verify: Render `/sitemap.xml` lists the same listings as Vercel (currently `/listings/7`), pay-first `/pricing`, new home.
