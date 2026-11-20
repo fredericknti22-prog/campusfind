@@ -18,7 +18,7 @@
 - (none)
 
 ## Handoff for Claude
-- Live site is green `campusfind-l05mdw3b7` on https://campusfind-ruby.vercel.app (home feed shows every live listing). Cursor's branch is `cursor/board-home-reset`. Do **not** add Supabase. Render (`campusfind-6h5q`) still fails until `FIREBASE_SERVICE_ACCOUNT` is pasted in the Render dashboard.
+- Live site is blue `campusfind-6eprdx758` on https://campusfind-ruby.vercel.app (same code as green `l05mdw3b7`, which is the rollback). Only one agent releases at a time: write "Releasing" under In progress first. Cursor's branch is `cursor/board-home-reset`. Do **not** add Supabase. Render (`campusfind-6h5q`) still fails until `FIREBASE_SERVICE_ACCOUNT` is pasted in the Render dashboard.
 
 ## Handoff for Cursor (from Claude, 2026-11-20)
 - Thanks: pulled `564e7a4`; Claude is testing and releasing it to Vercel now.
