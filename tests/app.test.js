@@ -243,6 +243,9 @@ test('super admin: system page, staff creation, role separation', async () => {
   assert.match(sys.text, /System health/);
   assert.match(sys.text, /Create a staff account/);
   assert.match(sys.text, /demo-campusfind/, 'shows the Firebase project');
+  assert.match(sys.text, /Launch checklist/);
+  assert.match(sys.text, /No test accounts left in the live database/);
+  assert.match(sys.text, /account\(s\) use a test address/, 'the test run itself uses @campus.test accounts');
 
   const weak = await state.root.post('/admin/system/staff', { name: 'Mod One', email: 'mod@campus.test', role: 'moderator', password: 'short' }, '/admin/system');
   assert.equal(weak.status, 400);
@@ -475,6 +478,36 @@ async function publish(c, over = {}) {
   assert.equal(r.status, 302, `publish failed: ${r.text.slice(0, 200)}`);
   return r.headers.get('location');
 }
+
+test('launch checklist: flags missing go-live settings without showing their values', () => {
+  const { evaluate, isTestEmail } = require('../src/services/launchCheck');
+  assert.ok(isTestEmail('ama@campus.test') && isTestEmail('x@example.com') && !isTestEmail('kofi@ug.edu.gh'));
+  const bare = {
+    payments: { paystackSecret: '' }, turnstile: { siteKey: '', secret: '', hostnames: [] }, allowedEmailDomains: [],
+    assistant: { apiKey: '' }, baseUrl: 'http://localhost:3000',
+    legal: { entity: 'the CampusFind team', governingLaw: '', postalAddress: '', dmca: {} },
+  };
+  const r = evaluate({ cfg: bare, momo: {}, supportEmail: '', facts: { testAccounts: 3, staffWithout2fa: 1 } });
+  assert.equal(r.items.every((i) => !i.ok), true, 'nothing is set');
+  assert.equal(r.mustLeft, 6);
+  assert.equal(r.shouldLeft, 4);
+  assert.match(r.items.find((i) => i.key === 'testAccounts').fix, /^3 account/);
+
+  const secret = 'sk_live_SHOULD_NEVER_APPEAR';
+  const full = {
+    payments: { paystackSecret: secret }, turnstile: { siteKey: 'site', secret: 'ts-secret', hostnames: ['campusfind-ruby.vercel.app'] },
+    allowedEmailDomains: ['ug.edu.gh'], assistant: { apiKey: 'sk-ant-x' }, baseUrl: 'https://campusfind-ruby.vercel.app',
+    legal: { entity: 'CampusFind Ltd', governingLaw: 'Ghana', postalAddress: 'P.O. Box 1, Accra', dmca: { agentName: 'A', email: 'a@b.c' } },
+  };
+  const ok = evaluate({ cfg: full, momo: {}, supportEmail: 'help@campusfind.app', facts: { testAccounts: 0, staffWithout2fa: 0 } });
+  assert.equal(ok.mustLeft + ok.shouldLeft, 0);
+  assert.ok(!JSON.stringify(ok).includes(secret) && !JSON.stringify(ok).includes('ts-secret'), 'no secret values in the output');
+  // Mobile Money details alone are enough to take payments.
+  const momoOnly = evaluate({ cfg: bare, momo: { number: '0241234567' }, supportEmail: '', facts: {} });
+  assert.equal(momoOnly.items.find((i) => i.key === 'payments').ok, true);
+  // A super admin who never signed in is flagged even if 2FA counts look fine.
+  assert.equal(evaluate({ cfg: full, facts: { superadminNeverSignedIn: true } }).items.find((i) => i.key === 'staff2fa').ok, false);
+});
 
 test('similar listings: ranking helper', () => {
   const { similar, words } = require('../src/lib/similar');

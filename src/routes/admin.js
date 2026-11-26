@@ -370,7 +370,10 @@ async function systemContext(extra = {}) {
     logs.where('action', 'in', ['auth.login_failed', 'auth.account_locked', 'admin.denied', 'auth.login_blocked']).orderBy('created_at', 'desc').limit(6).get(),
   ]);
   const rank = { superadmin: 0, admin: 1, moderator: 2 };
+  const launchCheck = require('../services/launchCheck');
+  const launch = launchCheck.evaluate({ facts: await launchCheck.gather() });
   return {
+    launch,
     settings: settings.all(),
     health: {
       uptime: Math.floor(process.uptime()), node: process.version, env: config.isProd ? 'production' : 'development',

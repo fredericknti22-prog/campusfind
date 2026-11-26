@@ -35,6 +35,8 @@ function systemPage(req, d) {
         </dl>
       </section>
 
+      ${d.launch ? launchList(d.launch) : ''}
+
       ${businessForm(req, d)}
 
       <div class="grid-2 grid-2--top">
@@ -106,6 +108,21 @@ function systemPage(req, d) {
 }
 
 
+/* Launch checklist: go-live settings still missing (names and counts only, never values). */
+function launchList({ items, mustLeft, shouldLeft }) {
+  const row = (i) => html`<li class="launch__item${i.ok ? ' is-ok' : ''}">
+    <span class="launch__mark" aria-hidden="true">${icon(i.ok ? 'check' : 'alert')}</span>
+    <div><strong>${i.title}</strong> <span class="chip${i.ok ? '' : i.level === 'must' ? ' chip--gold' : ' chip--tone'}">${i.ok ? 'Done' : i.level === 'must' ? 'Before launch' : 'Soon'}</span>
+      ${i.ok ? '' : html`<p class="muted small">${i.fix}</p>`}</div></li>`;
+  const summary = !mustLeft && !shouldLeft
+    ? 'Everything here is set. Do one full run-through on a phone before you announce the site.'
+    : `${mustLeft} to fix before launch, ${shouldLeft} to fix soon. Settings are read from Vercel and this page; their values are never shown.`;
+  return html`<section class="card pad launch" id="launch" aria-labelledby="h-launch">
+    <h2 id="h-launch">Launch checklist</h2>
+    <p class="muted">${summary}</p>
+    <ul class="launch__list">${items.filter((i) => !i.ok).map(row)}${items.filter((i) => i.ok).map(row)}</ul>
+  </section>`;
+}
 
 /* Payment and contact details: editable here so the owner never has to open Vercel. Values set here win over the
    environment variables; leaving a field empty falls back to them. */
