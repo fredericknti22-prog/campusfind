@@ -17,6 +17,8 @@ const { requireLogin, requireActive } = require('../middleware/auth');
 const { REASONS } = require('../views/pages/account');
 
 const router = express.Router();
+const { sharedRateLimit } = require('../middleware/sharedLimit');
+const exportLimit = sharedRateLimit({ name: 'data-export', windowMs: 3600_000, max: 5, key: (req) => `export:${req.user ? req.user.user_id : req.ip}`, message: 'You have downloaded your data several times in the last hour. Please try again later.' });
 
 const profileView = (u) => ({ name: u.name, bio: '', program: '', study_year: '', show_program: 1, ...(u.profile || {}) });
 
@@ -121,6 +123,19 @@ router.post('/profile/password', requireLogin, async (req, res) => {
   await audit({ actor: req.user, action: 'auth.password_change', entityType: 'user', entityId: req.user.user_id, ip: req.ip });
   req.flash('success', 'Password changed. Other devices were signed out.');
   res.redirect('/profile');
+});
+
+/* Download my data: everything we hold about the member, as one JSON file (Act 843 access and portability). */
+router.post('/profile/export', requireLogin, exportLimit, async (req, res) => {
+  const dataExport = require('../services/dataExport');
+  const body = JSON.stringify(await dataExport.build(req.user), null, 2);
+  await audit({ actor: req.user, action: 'account.export', entityType: 'user', entityId: req.user.user_id, ip: req.ip });
+  res.set({
+    'Content-Type': 'application/json; charset=utf-8',
+    'Content-Disposition': `attachment; filename="${dataExport.filename(req.user)}"`,
+    'Cache-Control': 'private, no-store',
+    'X-Content-Type-Options': 'nosniff',
+  }).send(body);
 });
 
 router.post('/profile/delete', requireLogin, async (req, res) => {

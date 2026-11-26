@@ -437,6 +437,34 @@ test('account deletion anonymises the member and removes listings and credential
   assert.equal((await new Client().post('/login', { email: 'dana@campus.test', password: STRONG })).status, 401);
 });
 
+test('download my data: own data as a JSON file, no secrets or other members’ details', async () => {
+  const c = await signup('Ella Export', 'ella.export@campus.test');
+  const other = await signup('Femi Other', 'femi.other@campus.test');
+  const made = await c.request('POST', '/listings/new', { multipart: listingForm(await c.token('/listings/new'), { title: 'Mini fridge for sale', description: 'Cold and quiet, collect from Hall 3.' }) });
+  const lid = idOf(made.headers.get('location'));
+  await other.post(`/listings/${lid}/message`, { body: 'Is the fridge still available?' }, `/listings/${lid}`);
+  const ella = await users.getByEmail('ella.export@campus.test');
+  await users.update(ella.user_id, { totp_secret: 'sealed-secret-value', failed_logins: 2 });
+
+  const profile = await c.get('/profile');
+  assert.ok(profile.text.includes('action="/profile/export"'), 'profile offers the download');
+  assert.equal((await new Client().request('POST', '/profile/export', { form: {} })).status, 403, 'needs a CSRF token');
+  const res = await c.post('/profile/export', {}, '/profile');
+  assert.equal(res.status, 200);
+  assert.ok(res.headers.get('content-type').startsWith('application/json'));
+  assert.match(res.headers.get('content-disposition'), /attachment; filename="campusfind-data-\d+-\d{4}-\d\d-\d\d\.json"/);
+  assert.match(res.headers.get('cache-control'), /no-store/);
+  const data = JSON.parse(res.text);
+  assert.equal(data.format, 'campusfind-export/1');
+  assert.equal(data.account.email, 'ella.export@campus.test');
+  assert.equal(data.account.two_step_sign_in, true);
+  assert.ok(data.listings.some((l) => l.listing_id === lid && l.title === 'Mini fridge for sale'));
+  const thread = data.conversations.find((t) => t.listing_id === lid);
+  assert.ok(thread && thread.with === 'Femi Other' && thread.messages[0].from === 'them' && /fridge/.test(thread.messages[0].text));
+  assert.ok(!/sealed-secret-value|failed_logins|"uid"|femi\.other@campus\.test|sender_id|participants/.test(res.text), 'no secrets, security counters or other members’ details');
+  assert.equal((await where('activity_logs', 'action', '==', 'account.export')).some((r) => Number(r.entity_id) === ella.user_id), true, 'download is logged');
+});
+
 /* ====================================================================== */
 /* Extended coverage: profiles, listing lifecycle, notifications, admin    */
 /* ====================================================================== */

@@ -333,6 +333,12 @@ function profile(req, { p, errors = {}, pwError = '', sessions = null, blocked =
               <form method="post" action="/users/${b.user_id}/unblock">${csrf(req)}<input type="hidden" name="back" value="profile"><button class="btn btn--ghost btn--sm" type="submit">Unblock</button></form></li>`)}</ul>
           </section>` : ''}
 
+          <form class="card form-card stack" id="your-data" method="post" action="/profile/export" aria-labelledby="h-data">${csrf(req)}
+            <h2 id="h-data">${icon('download')} Download your data</h2>
+            <p class="muted small">Get a copy of your account details, listings, messages, reviews, alerts, saved items, orders and reports as one file (JSON). Other members appear only by name. <a href="/data-protection">Your data rights</a></p>
+            <button class="btn btn--ghost btn--block" type="submit">Download my data</button>
+          </form>
+
           <form class="card form-card stack danger-zone" method="post" action="/profile/delete">${csrf(req)}
             <h2>${icon('alert')} Delete account</h2>
             <p class="muted small">Removes your listings and erases your personal details. Your name becomes “Deleted user”. This cannot be undone.</p>
