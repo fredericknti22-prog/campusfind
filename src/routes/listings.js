@@ -277,7 +277,10 @@ router.get('/listings/:id', gate, async (req, res) => {
   }
   const imgs = [...(l.images || [])].sort((a, b) => a.position - b.position);
   const saved = req.user && !isOwner ? await require('../repo/favorites').has(req.user.user_id, id) : false;
-  res.render('listingDetail', { sellerRating, l, images: imgs, owner, isOwner, staff, saved, canSeeContact: Boolean(req.user) });
+  const similar = publiclyVisible
+    ? require('../lib/similar').similar(l, await listings.activeSnapshot(), { hidden: new Set(require('../services/blocks').list(req.user)) })
+    : [];
+  res.render('listingDetail', { sellerRating, l, images: imgs, owner, isOwner, staff, saved, similar, canSeeContact: Boolean(req.user) });
 });
 
 /* ------------------------------------------------------------ poster */

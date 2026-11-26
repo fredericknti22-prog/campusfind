@@ -402,7 +402,11 @@ function listingDetail(req, d) {
           ${!isOwner ? html`<a class="report-link" href="/report?type=listing&id=${l.listing_id}">${icon('flag')} Report this listing</a>` : ''}
           ${staff ? html`<a class="report-link" href="/admin/listings?q=${l.listing_id}">${icon('shield')} Open in admin</a>` : ''}
         </aside>
-      </div>`,
+      </div>
+
+      ${d.similar && d.similar.length ? html`<section class="section similar" aria-labelledby="h-similar">
+        <div class="section__head"><h2 id="h-similar">Similar listings</h2><a class="link-arrow" href="/browse?category=${l.cat_slug}">More in ${l.cat_name} ${icon('arrow')}</a></div>
+        <div class="grid">${d.similar.map(listingCard)}</div></section>` : ''}`,
   });
 }
 

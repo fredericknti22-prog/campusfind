@@ -476,6 +476,38 @@ async function publish(c, over = {}) {
   return r.headers.get('location');
 }
 
+test('similar listings: ranking helper', () => {
+  const { similar, words } = require('../src/lib/similar');
+  assert.deepEqual([...words('Selling used Chemistry textbooks for sale')].sort(), ['chemistry', 'textbook']);
+  const base = { listing_id: 1, owner_id: 9, category_id: 2, title: 'Chemistry textbook', price_cents: 5000 };
+  const pool = [
+    base,
+    { listing_id: 2, owner_id: 9, category_id: 2, title: 'Chemistry textbook vol 2', price_cents: 5000 },
+    { listing_id: 3, owner_id: 4, category_id: 2, title: 'Chemistry textbook 8th ed', price_cents: 4500, published_at: 1 },
+    { listing_id: 4, owner_id: 5, category_id: 2, title: 'Desk lamp', price_cents: 900, published_at: 3 },
+    { listing_id: 5, owner_id: 6, category_id: 7, title: 'Bike for sale', price_cents: 5000 },
+    { listing_id: 6, owner_id: 8, category_id: 7, title: 'Chemistry lab coat', price_cents: 3000, published_at: 2 },
+    { listing_id: 7, owner_id: 3, category_id: 2, title: 'Chemistry textbook', price_cents: 5000 },
+  ];
+  assert.deepEqual(similar(base, pool, { hidden: new Set([3]) }).map((l) => l.listing_id), [3, 4, 6],
+    'best match first; own listings, blocked owners and unrelated items left out');
+  assert.equal(similar(base, pool, { limit: 1 }).length, 1);
+});
+
+test('similar listings appear on a listing page, without the poster\'s own items', async () => {
+  const s1 = await signup('Sim Seller', 'sim.seller@campus.test');
+  const s2 = await signup('Sim Other', 'sim.other@campus.test');
+  const a = await publish(s1, { title: 'Organic chemistry workbook', category_id: '1' });
+  const own = await publish(s1, { title: 'Organic chemistry flashcards', category_id: '1' });
+  const b = await publish(s2, { title: 'Organic chemistry workbook answers', category_id: '1' });
+  const page = (await new Client().get(a)).text;
+  assert.match(page, /id="h-similar"/);
+  const section = page.slice(page.indexOf('id="h-similar"'));
+  assert.ok(section.includes(`href="/listings/${idOf(b)}"`), 'shows another member\'s matching listing');
+  assert.ok(!section.includes(`href="/listings/${idOf(own)}"`), 'leaves out the poster\'s other listings');
+  assert.ok(!section.includes(`href="/listings/${idOf(a)}"`), 'never links to itself');
+});
+
 test('profile: update, public page hides email, program toggle, validation', async () => {
   const erin = new Client();
   assert.equal((await erin.post('/register', { name: 'Erin Profile', email: 'erin@campus.test', password: ERIN_PW, agree: '1', dob: '1998-05-14' }, '/register')).status, 302);
