@@ -93,5 +93,6 @@ can be wired in as a third, fully separate staging environment.
 | 2026-11-20 | blue | campusfind-6eprdx758 | same code as l05mdw3b7 plus notes (0136ba5); released by Claude minutes after Cursor's green release, so blue is live and green l05mdw3b7 is the rollback target. main and cursor/board-home-reset are the same commit |
 | 2026-11-20 | green | campusfind-1kjtzrgex | Vercel only: any onrender.com host 301s to https://campusfind-ruby.vercel.app (path kept); Render helper scripts removed (50b3d9f) |
 | 2026-11-26 | blue | campusfind-465vwc9xc | Download my data on the profile (JSON copy of the member's own data); Render sandbox files (bd6539a) |
-| 2026-11-26 | green (live) | campusfind-gczn6pjr8 | Similar listings on each listing page (98994eb) |
+| 2026-11-26 | green | campusfind-gczn6pjr8 | Similar listings on each listing page (98994eb) |
+| 2026-11-26 | blue (live) | campusfind-e5r31rnch | Launch checklist on the Super admin page (7ea266b) |
 | 2026-11-20 | Render | dep-dc01p33m8hqs739a1d20 | `campusfind-6h5q` live on Firebase (`campusfind-baf86`): base64 `FIREBASE_SERVICE_ACCOUNT` + app env; `/healthz` ok; sitemap lists `/listings/7` |
