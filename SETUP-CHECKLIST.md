@@ -27,7 +27,7 @@ Add variables in Vercel: Project `campusfind` > Settings > Environment Variables
 - [ ] **You** Render is no longer used (Vercel only). After the Render service is deleted, delete the extra Firebase
       key made for it (Google Cloud Console > IAM > Service accounts > firebase-adminsdk > Keys, the key created
       2026-11-20 for Render). Keep the key Vercel uses. Also delete the unused Supabase project.
-- [ ] **You** Remove the ~8 `@campus.test` accounts left over from testing
+- [x] Removed the 7 `@campus.test` test accounts (Claude, 2026-11-26; their 3 test reports kept for the moderation record)
       (Firebase console > Authentication > Users; also delete their listings in Firestore if any).
 
 ## 3. Payments (promotions)
