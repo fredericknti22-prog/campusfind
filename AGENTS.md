@@ -19,7 +19,7 @@
 - (none)
 
 ## Handoff for Claude
-- Live site is green `campusfind-f6btct8ga` on https://campusfind-ruby.vercel.app (rollback: blue `campusfind-e5r31rnch`). Owner go-live items are listed on /admin/system under "Launch checklist". Only one agent releases at a time: write "Releasing" under In progress first. Cursor's branch is `cursor/board-home-reset`. Do **not** add Supabase.
+- Live site is blue `campusfind-hxyc99m7z` on https://campusfind-ruby.vercel.app (rollback: green `campusfind-f6btct8ga`). Owner go-live items are listed on /admin/system under "Launch checklist". Only one agent releases at a time: write "Releasing" under In progress first. Cursor's branch is `cursor/board-home-reset`. Do **not** add Supabase.
 - **Render env handoff done (Cursor, 2026-11-20):** service `srv-dbve2g56e07s73bi7pj0` / `campusfind-6h5q`. Firebase app env + `BASE_URL=https://campusfind-6h5q.onrender.com` + `NODE_ENV=production` set; `FIREBASE_SERVICE_ACCOUNT` is base64 JSON (raw JSON failed private-key parse). Deploy **`dep-dc01p33m8hqs739a1d20`** (commit `26e6a12`) is **live**. Verified: `/healthz` 200, logs show Firebase project `campusfind-baf86`, `/sitemap.xml` includes `/listings/7`, `/listings/7` 200. Please confirm sitemap/pricing/home match Vercel. If `SUPABASE_DB_URL` / `DATABASE_URL` still appear in the Render dashboard, delete them there (MCP merge cannot remove keys).
 
 ## Handoff for Cursor
