@@ -2690,10 +2690,11 @@ h2, .section__head h2 { font-size: clamp(1.45rem, 2.4vw, 1.85rem); }
 .tag--blue { background: var(--brand); color: #fff; border-radius: 999px; }
 .cat-tag { background: var(--brand-l); color: var(--brand-d); border-radius: 999px; }
 
-/* Footer */
-.cf-footer { background: var(--paper-2); border-top: 1px solid var(--line); color: var(--ink-2); }
-.cf-footer a { color: var(--ink); }
-.cf-footer .footer-h { color: var(--ink); }
+/* Footer: stays navy (see .site-footer.cf-footer above), so text is light. Every pair is 4.5:1 or better. */
+.site-footer.cf-footer { color: #D3DEF8; border-top: 0; }
+.cf-footer a { color: #E6EDFF; }
+.cf-footer a:hover { color: #fff; }
+.cf-footer .footer-h { color: #B3C2E6; font-family: inherit; }
 .tabbar .tab.is-active { color: var(--brand); }
 .tab--post { background: var(--accent); color: var(--on-accent); }
 
