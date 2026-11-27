@@ -358,6 +358,12 @@ router.post('/listings/:id/edit', requireLogin, loadListingForOwner, uploadParse
 router.post('/listings/:id/renew', requireLogin, loadListingForOwner, async (req, res) => {
   const fresh = require('../services/freshness');
   const [l] = await listings.hydrate([req.listing]);
+  // renewing never puts a Business listing back up for free: it needs a paid Business advertisement
+  if (l.cat_slug === 'business' && !(Number(l.promo_until) > Date.now())) {
+    await listings.update(l.listing_id, { requires_payment: true, awaiting_payment: true });
+    req.flash('info', 'Business listings go live once the Business advertisement is paid.');
+    return res.redirect(`/listings/${l.listing_id}/promote`);
+  }
   if (!fresh.canRenew(l)) {
     req.flash('error', `You can renew a listing during its last ${fresh.RENEW_WINDOW_DAYS} days, or after it expires.`);
     return res.redirect('/my/listings');
@@ -379,8 +385,8 @@ router.post('/listings/:id/status', requireLogin, loadListingForOwner, async (re
   const now = Date.now();
   {
     const c = (await categories.all()).find((x) => x.category_id === req.listing.category_id);
-    if (next === 'active' && c && c.slug === 'business' && req.listing.requires_payment && !(Number(req.listing.promo_until) > now)) {
-      await listings.update(req.listing.listing_id, { awaiting_payment: true });
+    if (next === 'active' && c && c.slug === 'business' && !(Number(req.listing.promo_until) > now)) {
+      await listings.update(req.listing.listing_id, { requires_payment: true, awaiting_payment: true });
       req.flash('info', 'Business listings go live once the Business advertisement is paid.');
       return res.redirect(`/listings/${req.listing.listing_id}/promote`);
     }

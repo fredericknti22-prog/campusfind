@@ -212,3 +212,38 @@ test('new listing form opens on the Business category from the directory button'
   assert.equal(page.status, 200);
   assert.match(page.text, /<option value="\d+" selected>Business<\/option>/);
 });
+
+test('business listings are never public without a paid Business advertisement, including old unpaid ones', async () => {
+  const { c, user } = await member('Kofi Boateng', 'unpaid');
+  const bizId = (await categories.all(true)).find((x) => x.slug === 'business').category_id;
+  const listings = require('../src/repo/listings');
+  const now = Date.now();
+  // a business listing from before payment was required: live, never paid, no requires_payment flag
+  const legacy = await listings.create({
+    owner_id: user.user_id, category_id: bizId, title: `Old shop ${RUN}`, description: 'Posted before business ads were paid.',
+    price_type: 'none', price_cents: null, location: '', contact: 'Ask me', business_type: null,
+    status: 'active', created_at: now - 20 * 86_400_000, updated_at: now, published_at: now - 20 * 86_400_000, images: [], cover: null,
+  });
+  const id = legacy.listing_id;
+
+  await require('../src/services/freshness').sweep({ force: true });
+  const closed = await listings.get(id);
+  assert.equal(closed.status, 'closed', 'an unpaid business listing is taken down');
+  assert.equal(closed.outcome, 'unpaid');
+  assert.ok(closed.awaiting_payment && closed.requires_payment);
+  assert.ok(!(await new Client().get('/business')).text.includes(`/listings/${id}`), 'not in the directory');
+
+  // the owner cannot put it back up for free, by re-opening or by renewing
+  const reopen = await c.post(`/listings/${id}/status`, { status: 'active' }, '/my/listings');
+  assert.match(reopen.headers.get('location'), new RegExp(`/listings/${id}/promote$`));
+  const renew = await c.post(`/listings/${id}/renew`, {}, '/my/listings');
+  assert.match(renew.headers.get('location'), new RegExp(`/listings/${id}/promote$`));
+  assert.equal((await listings.get(id)).status, 'closed');
+
+  // once the Business advertisement is paid and confirmed it goes live
+  await payForBusiness(c, id);
+  const live = await listings.get(id);
+  assert.equal(live.status, 'active');
+  assert.ok(Number(live.promo_until) > Date.now());
+  assert.ok((await new Client().get('/business')).text.includes(`/listings/${id}`), 'listed once paid');
+});

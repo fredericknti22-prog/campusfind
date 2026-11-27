@@ -175,7 +175,7 @@ function businessPage(req, { shops, spotlight, total, type, counts }) {
         <div class="band__text">
           <p class="eyebrow">${icon('store')} Business directory</p>
           <h1 id="h-biz-hero">Sell to every student on campus</h1>
-          <p class="band__lead">For hostel managers, food vendors, shop owners and anyone selling to students. Pay once for a Business advertisement and your listing goes live straight away, with Pro seller perks.</p>
+          <p class="band__lead">For hostel managers, food vendors, shop owners and anyone selling to students. Pay for a Business advertisement and your listing goes live as soon as the payment is confirmed, with Pro seller perks. Nothing is shown before then.</p>
           <p class="band__note">Selling here means you agree to the <a href="/business-terms">Seller &amp; business terms</a>. Businesses are listed by their owners and are not inspected or endorsed by CampusFind (<a href="/disclaimer">disclaimer</a>).</p>
           <div class="row row--wrap">
             <a class="btn btn--accent" href="/listings/new?category=business">${icon('plus')} List your business · from ${money(P.prices.business)}</a>

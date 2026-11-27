@@ -33,10 +33,14 @@ async function sweep({ force = false, now = Date.now() } = {}) {
     const owners = await require('../store').getMany('users', [...new Set(raw.map((l) => l.owner_id))]);
     const pro = require('./pro');
     for (const l of await listings.hydrate(raw)) {
-      // a paid Business listing closes when its paid period ends (listings from before this rule are left alone)
-      if (l.cat_slug === 'business' && l.requires_payment && !(Number(l.promo_until) > now)) {
-        await listings.update(l.listing_id, { status: 'closed', outcome: 'unpaid', awaiting_payment: true, updated_at: now });
-        await notify(l.owner_id, { type: 'system', title: `Your business ad for “${String(l.title).slice(0, 60)}” has ended`, body: 'Pay for another period to put it back on CampusFind.', link: `/listings/${l.listing_id}/promote` });
+      // Business listings are only public while a Business advertisement is paid. One that was never paid (including
+      // listings from before payment was required) or whose paid period has ended is closed until the owner pays.
+      if (l.cat_slug === 'business' && !(Number(l.promo_until) > now)) {
+        const everPaid = Number(l.promo_until) > 0;
+        await listings.update(l.listing_id, { status: 'closed', outcome: 'unpaid', requires_payment: true, awaiting_payment: true, updated_at: now });
+        await notify(l.owner_id, everPaid
+          ? { type: 'system', title: `Your business ad for “${String(l.title).slice(0, 60)}” has ended`, body: 'Pay for another period to put it back on CampusFind.', link: `/listings/${l.listing_id}/promote` }
+          : { type: 'system', title: `“${String(l.title).slice(0, 60)}” needs a Business advertisement`, body: 'Business listings are shown once a Business advertisement is paid. Choose a plan to put it back on CampusFind.', link: `/listings/${l.listing_id}/promote` });
         continue;
       }
       if (exempt(l)) continue;
