@@ -2998,7 +2998,7 @@ h2, .section__head h2 { font-size: clamp(1.45rem, 2.4vw, 1.85rem); }
   background: var(--brand); border-color: var(--brand); color: var(--on-primary);
 }
 .rail-card--cta:hover { color: var(--on-primary); filter: brightness(1.05); }
-.rail-card--cta .rail-card__body small { color: color-mix(in srgb, var(--on-primary) 80%, transparent); }
+.rail-card--cta .rail-card__body small { color: color-mix(in srgb, var(--on-primary) 92%, transparent); } /* 5:1 on the blue card (80% was 4.3:1) */
 .rail-card--cta .rail-card__go .icon { color: var(--on-primary); }
 
 @media (min-width: 1001px) {

@@ -134,13 +134,13 @@ function browse(req, d) {
 
         <section aria-label="Results"><h2 class="sr-only">Results</h2>
           <div class="results-bar">
-            <div class="chips" aria-label="Active filters">
+            ${chips.length || filtered ? html`<div class="chips" aria-label="Active filters">
               ${chips.map(([k, v, key]) => html`<a class="chip chip--removable" href="${without(key)}" aria-label="Remove filter ${k}: ${v}"><span>${k}: ${v}</span>${icon('x')}</a>`)}
               ${filtered ? html`<a class="link-clear" href="/browse">Clear all</a>` : ''}
               ${filtered && (q || category || priceMax) ? (req.user
                 ? html`<form class="alert-form" method="post" action="/alerts">${csrf(req)}${hidden('q', q)}${hidden('category', category)}${hidden('price_max', priceMax)}<button class="btn btn--ghost btn--sm" type="submit">${icon('bell')} Alert me about new matches</button></form>`
                 : html`<a class="btn btn--ghost btn--sm" href="/login?next=${encodeURIComponent(req.originalUrl || '/browse')}">${icon('bell')} Sign in to get alerts</a>`) : ''}
-            </div>
+            </div>` : ''}
             <form class="sortbox" method="get" action="/browse">
               ${hidden('q', q)}${hidden('category', category)}${hidden('price_max', priceMax)}${hidden('verified', verified)}
               <label for="f-sort">Sort by</label>
