@@ -527,3 +527,43 @@ document.addEventListener('click', function (e) {
   if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window) || Notification.permission === 'denied') return;
   navigator.serviceWorker.ready.then(function (reg) { return reg.pushManager.getSubscription(); }).then(function (s) { if (!s) hint.hidden = false; }).catch(function () {});
 })();
+
+/* Category strip: hidden scrollbar, so show edge fades and (for mouse users) arrow buttons only when there is
+   more to see in that direction, and bring the current category into view on load. */
+(function () {
+  var strip = document.querySelector('.catstrip');
+  if (!strip) return;
+  var row = strip.querySelector('.catstrip__inner');
+  var prev = strip.querySelector('.catstrip__nav--prev');
+  var next = strip.querySelector('.catstrip__nav--next');
+  if (!row) return;
+  var fine = window.matchMedia ? window.matchMedia('(hover: hover) and (pointer: fine)') : { matches: false };
+  var rtlSafe = function () { return Math.abs(row.scrollLeft); };
+  function update() {
+    var max = row.scrollWidth - row.clientWidth;
+    var atStart = rtlSafe() <= 2;
+    var atEnd = rtlSafe() >= max - 2;
+    strip.classList.toggle('is-more-start', max > 2 && !atStart);
+    strip.classList.toggle('is-more-end', max > 2 && !atEnd);
+    if (prev) prev.hidden = !fine.matches || max <= 2 || atStart;
+    if (next) next.hidden = !fine.matches || max <= 2 || atEnd;
+  }
+  function page(dir) {
+    row.scrollBy({ left: dir * Math.max(160, row.clientWidth * 0.75), behavior: 'smooth' });
+  }
+  if (prev) prev.addEventListener('click', function () { page(-1); });
+  if (next) next.addEventListener('click', function () { page(1); });
+  var ticking = false;
+  row.addEventListener('scroll', function () {
+    if (ticking) return;
+    ticking = true;
+    window.requestAnimationFrame(function () { ticking = false; update(); });
+  }, { passive: true });
+  window.addEventListener('resize', update);
+  if (fine.addEventListener) fine.addEventListener('change', update);
+  var active = row.querySelector('.catstrip__chip.is-active');
+  if (active && active.offsetLeft + active.offsetWidth > row.clientWidth) {
+    row.scrollLeft = active.offsetLeft - (row.clientWidth - active.offsetWidth) / 2;
+  }
+  update();
+})();

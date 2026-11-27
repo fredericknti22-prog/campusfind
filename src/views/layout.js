@@ -96,8 +96,12 @@ function categoryStrip(req) {
   const onBrowse = req.path === '/browse';
   const curCat = onBrowse ? String((req.query && req.query.category) || '') : '';
   const chip = (href, here, label, ic) => html`<a class="catstrip__chip${here ? ' is-active' : ''}" href="${href}"${here ? raw(' aria-current="page"') : ''}>${icon(ic)}<span>${label}</span></a>`;
-  return html`<div class="catstrip" aria-label="Browse by category">
-    <div class="catstrip__inner wrap">
+  /* The strip scrolls sideways with a hidden scrollbar. app.js shows the arrow buttons (mouse users) and the
+     edge fades only when there is more to see in that direction. */
+  return html`<nav class="catstrip" aria-label="Browse by category">
+    <div class="catstrip__frame wrap">
+    <button class="catstrip__nav catstrip__nav--prev" type="button" aria-label="Show previous categories" hidden>${icon('chevronLeft')}</button>
+    <div class="catstrip__inner">
       ${chip('/browse', onBrowse && !curCat, 'All', 'list')}
       ${cats.map((c) => {
         const href = pageFor[c.slug] || `/browse?category=${c.slug}`;
@@ -107,7 +111,9 @@ function categoryStrip(req) {
       ${chip('/pricing', req.path === '/pricing', 'Pricing', 'tag')}
       ${chip('/help', req.path === '/help', 'Help', 'shield')}
     </div>
-  </div>`;
+    <button class="catstrip__nav catstrip__nav--next" type="button" aria-label="Show more categories" hidden>${icon('chevronRight')}</button>
+    </div>
+  </nav>`;
 }
 
 /** Header: brand, search, account actions. Categories live in the strip below. */

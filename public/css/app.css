@@ -2861,12 +2861,42 @@ h2, .section__head h2 { font-size: clamp(1.45rem, 2.4vw, 1.85rem); }
   -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--line);
 }
+.catstrip__frame { position: relative; }
 .catstrip__inner {
   display: flex; gap: 8px; align-items: center;
-  overflow-x: auto; -webkit-overflow-scrolling: touch;
-  scroll-snap-type: x proximity;
-  padding: 10px 0; scrollbar-width: thin;
+  overflow-x: auto; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity; scroll-padding-inline: 48px; scroll-behavior: smooth;
+  padding: 10px 4px;
+  scrollbar-width: none; /* no raw scrollbar: swipe, trackpad, or the arrow buttons */
 }
+.catstrip__inner::-webkit-scrollbar { display: none; }
+/* soft fades only on the side that has more chips (classes set by app.js) */
+.catstrip.is-more-end .catstrip__inner {
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 64px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 64px), transparent);
+}
+.catstrip.is-more-start .catstrip__inner {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 64px);
+  mask-image: linear-gradient(to right, transparent, #000 64px);
+}
+.catstrip.is-more-start.is-more-end .catstrip__inner {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 64px, #000 calc(100% - 64px), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 64px, #000 calc(100% - 64px), transparent);
+}
+.catstrip__nav {
+  position: absolute; top: 50%; z-index: 2; transform: translateY(-50%);
+  display: inline-grid; place-items: center; width: 36px; height: 36px; padding: 0;
+  border-radius: 999px; border: 1px solid var(--line); background: var(--card); color: var(--ink);
+  box-shadow: 0 2px 8px rgba(10, 31, 82, .12); cursor: pointer;
+  transition: background-color .15s ease, border-color .15s ease, color .15s ease;
+}
+.catstrip__nav[hidden] { display: none; }
+.catstrip__nav--prev { left: 0; }
+.catstrip__nav--next { right: 0; }
+.catstrip__nav .icon { width: 18px; height: 18px; }
+.catstrip__nav:hover { border-color: var(--brand); color: var(--brand-d); }
+.catstrip__nav:focus-visible, .catstrip__chip:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .catstrip__inner { scroll-behavior: auto; } }
 .catstrip__chip {
   display: inline-flex; align-items: center; gap: 7px;
   flex: none; scroll-snap-align: start;
@@ -3011,3 +3041,15 @@ h2, .section__head h2 { font-size: clamp(1.45rem, 2.4vw, 1.85rem); }
 /* ===== Sandbox banner ===== */
 .env-banner--sandbox { background: #7c2d12; color: #fff; }
 .env-banner--sandbox a { color: #fde68a; }
+
+/* File pickers (listing photos): the browser's grey "Choose Files" button styled as a CampusFind button. */
+input[type="file"] { font: inherit; color: var(--ink-2); cursor: pointer; max-width: 100%; }
+input[type="file"]::file-selector-button {
+  display: inline-flex; align-items: center; min-height: 40px; margin-right: 12px; padding: 0 16px;
+  border: 1px solid var(--brand); border-radius: 999px; background: var(--brand); color: var(--on-primary, #fff);
+  font: inherit; font-weight: 600; font-size: .9rem; cursor: pointer;
+  transition: background-color .15s ease, border-color .15s ease;
+}
+input[type="file"]:hover::file-selector-button { background: var(--brand-d); border-color: var(--brand-d); }
+input[type="file"]:focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; }
+.uploader input[type="file"] { padding: 12px; }
