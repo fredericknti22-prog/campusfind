@@ -97,5 +97,6 @@ can be wired in as a third, fully separate staging environment.
 | 2026-11-26 | blue | campusfind-e5r31rnch | Launch checklist on the Super admin page (7ea266b) |
 | 2026-11-27 | green | campusfind-f6btct8ga | Readable footer: light text on the navy footer (ee26b02) |
 | 2026-11-27 | blue | campusfind-hxyc99m7z | Category strip without a raw scrollbar (fades + arrows); styled photo picker (06c9e49) |
-| 2026-11-27 | green (live) | campusfind-ghg02pgn5 | Browse: no empty gap above Sort by; home blue card subtitle contrast (02749ff) |
+| 2026-11-27 | green | campusfind-ghg02pgn5 | Browse: no empty gap above Sort by; home blue card subtitle contrast (02749ff) |
+| 2026-11-27 | blue (live) | campusfind-1tzyhgf8w | Business listings hidden until the Business ad is paid, incl. old unpaid ones; renew/re-open loopholes closed (27c6fbc) |
 | 2026-11-20 | Render | dep-dc01p33m8hqs739a1d20 | `campusfind-6h5q` live on Firebase (`campusfind-baf86`): base64 `FIREBASE_SERVICE_ACCOUNT` + app env; `/healthz` ok; sitemap lists `/listings/7` |
